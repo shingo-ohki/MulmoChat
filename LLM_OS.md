@@ -233,19 +233,18 @@ You speak → System understands → System picks the right tools → Tools do t
 
 ### Technical
 
-* LLM reliability and latency
-* Determinism vs flexibility
-* Privacy and data governance
-* Offline operation
-* Cost and scalability
+* **Response speed**: Keeping conversations feeling instant, not laggy
+* **Reliability**: Making sure the system understands you correctly every time
+* **Privacy**: Keeping your personal information secure
+* **Working offline**: What happens when you don't have internet?
+* **Cost**: Making this affordable for everyone
 
-### UX
+### User Experience
 
-* Discoverability of new capabilities
-* Trust and transparency
-* Error correction and clarification
-* Context boundaries between sessions
-* Serving both novices and experts
+* **Discovering what's possible**: How do you know what to ask for if you don't know what's available?
+* **Trust**: How do you know the system did what you asked?
+* **Fixing mistakes**: What if the system misunderstands you?
+* **Serving everyone**: How do beginners and experts both feel comfortable?
 
 ### Societal
 
