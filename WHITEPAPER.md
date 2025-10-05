@@ -1,4 +1,4 @@
-# The LLM-Orchestrated Operating System: Beyond the Sea of App Icons
+# Beyond the Sea of App Icons: The LLM-Orchestrated Operating System
 
 **A New Paradigm for Human-Computer Interaction**
 
