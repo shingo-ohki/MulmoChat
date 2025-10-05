@@ -91,7 +91,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { marked } from "marked";
-import type { ToolResult } from "../type";
+import type { ToolResult } from "../types";
 
 const props = defineProps<{
   selectedResult: ToolResult;

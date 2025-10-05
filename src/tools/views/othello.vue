@@ -40,7 +40,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
-import type { ToolResult } from "../type";
+import type { ToolResult } from "../types";
 
 const props = defineProps<{
   selectedResult: ToolResult | null;

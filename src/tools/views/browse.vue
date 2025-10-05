@@ -91,7 +91,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import type { ToolResult } from "../type";
+import type { ToolResult } from "../types";
 import TextSelectionMenu from "../../components/TextSelectionMenu.vue";
 
 const props = defineProps<{

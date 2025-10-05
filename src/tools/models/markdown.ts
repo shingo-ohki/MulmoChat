@@ -1,4 +1,4 @@
-import { ToolPlugin, ToolContext, ToolResult } from "../type";
+import { ToolPlugin, ToolContext, ToolResult } from "../types";
 import MarkdownView from "../views/markdown.vue";
 import MarkdownPreview from "../previews/markdown.vue";
 import { loadBlankImageBase64 } from "./mulmocast";

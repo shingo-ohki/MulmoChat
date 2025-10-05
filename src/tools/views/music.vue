@@ -40,7 +40,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch, onUnmounted } from "vue";
-import type { ToolResult } from "../type";
+import type { ToolResult } from "../types";
 import { OpenSheetMusicDisplay } from "opensheetmusicdisplay";
 // @ts-ignore
 import PlaybackEngine from "osmd-audio-player";

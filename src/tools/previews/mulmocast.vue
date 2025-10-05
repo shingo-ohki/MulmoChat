@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ToolResult } from "../type";
+import type { ToolResult } from "../types";
 import { computed } from "vue";
 
 const props = defineProps<{

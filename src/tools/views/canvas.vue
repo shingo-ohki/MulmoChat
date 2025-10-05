@@ -96,7 +96,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from "vue";
 import VueDrawingCanvas from "vue-drawing-canvas";
-import type { ToolResult } from "../type";
+import type { ToolResult } from "../types";
 
 const props = defineProps<{
   selectedResult: ToolResult | null;

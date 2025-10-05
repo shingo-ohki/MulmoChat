@@ -74,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ToolResult } from "../type";
+import type { ToolResult } from "../types";
 import TextSelectionMenu from "../../components/TextSelectionMenu.vue";
 
 defineOptions({

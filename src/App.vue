@@ -68,7 +68,7 @@ import {
   ToolResult,
   ToolContext,
   getToolPlugin,
-} from "./tools/type";
+} from "./tools";
 import { createUploadedImageResult } from "./tools/models/generateImage";
 import type { StartApiResponse } from "../server/types";
 import Sidebar from "./components/Sidebar.vue";

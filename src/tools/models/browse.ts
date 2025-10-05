@@ -1,4 +1,4 @@
-import { ToolPlugin, ToolContext, ToolResult } from "../type";
+import { ToolPlugin, ToolContext, ToolResult } from "../types";
 import BrowseView from "../views/browse.vue";
 import BrowsePreview from "../previews/browse.vue";
 

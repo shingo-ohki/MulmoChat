@@ -1,4 +1,4 @@
-import { ToolPlugin, ToolContext, ToolResult } from "../type";
+import { ToolPlugin, ToolContext, ToolResult } from "../types";
 import MulmocastView from "../views/mulmocast.vue";
 import MulmocastPreview from "../previews/mulmocast.vue";
 import type { MulmoScript } from "mulmocast";

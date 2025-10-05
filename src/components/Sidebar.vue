@@ -182,8 +182,8 @@
 
 <script setup lang="ts">
 import { ref, nextTick, defineProps, defineEmits } from "vue";
-import type { ToolResult } from "../tools/type";
-import { getToolPlugin } from "../tools/type";
+import type { ToolResult } from "../tools";
+import { getToolPlugin } from "../tools";
 import { LANGUAGES } from "../config/languages";
 
 defineProps<{

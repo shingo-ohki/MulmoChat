@@ -1,4 +1,4 @@
-import { ToolPlugin, ToolContext, ToolResult } from "../type";
+import { ToolPlugin, ToolContext, ToolResult } from "../types";
 import MusicView from "../views/music.vue";
 import MusicPreview from "../previews/music.vue";
 

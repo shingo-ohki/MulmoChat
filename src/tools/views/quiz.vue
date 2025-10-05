@@ -74,7 +74,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
-import type { ToolResult } from "../type";
+import type { ToolResult } from "../types";
 import type { QuizData } from "../quiz";
 
 const props = defineProps<{

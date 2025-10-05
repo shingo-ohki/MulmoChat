@@ -1,4 +1,4 @@
-import { ToolPlugin, ToolContext, ToolResult } from "../type";
+import { ToolPlugin, ToolContext, ToolResult } from "../types";
 import { playOthello, Command, Side } from "../logic/othelloLogic";
 import OthelloView from "../views/othello.vue";
 import OthelloPreview from "../previews/othello.vue";

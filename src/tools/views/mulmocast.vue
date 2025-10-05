@@ -103,7 +103,7 @@
 <script setup lang="ts">
 import { ref, computed, onUnmounted, watch } from "vue";
 import { v4 as uuidv4 } from "uuid";
-import type { ToolResult } from "../type";
+import type { ToolResult } from "../types";
 
 const props = defineProps<{
   selectedResult: ToolResult | null;

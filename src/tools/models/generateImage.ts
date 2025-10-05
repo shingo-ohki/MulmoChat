@@ -1,4 +1,4 @@
-import { ToolPlugin, ToolContext, ToolResult } from "../type";
+import { ToolPlugin, ToolContext, ToolResult } from "../types";
 import ImageView from "../views/image.vue";
 import ImagePreview from "../previews/image.vue";
 

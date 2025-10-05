@@ -1,4 +1,4 @@
-import { ToolPlugin, ToolContext, ToolResult } from "../type";
+import { ToolPlugin, ToolContext, ToolResult } from "../types";
 import QuizView from "../views/quiz.vue";
 import QuizPreview from "../previews/quiz.vue";
 

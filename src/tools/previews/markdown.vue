@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import type { ToolResult } from "../type";
+import type { ToolResult } from "../types";
 
 const props = defineProps<{
   result: ToolResult;

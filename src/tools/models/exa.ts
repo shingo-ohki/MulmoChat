@@ -1,4 +1,4 @@
-import { ToolPlugin, ToolContext, ToolResult } from "../type";
+import { ToolPlugin, ToolContext, ToolResult } from "../types";
 import ExaView from "../views/exa.vue";
 import ExaPreview from "../previews/exa.vue";
 
