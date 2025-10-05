@@ -550,11 +550,12 @@ As LLMs continue to improve in reasoning capability, context retention, and mult
 
 ## References
 
-1. OpenAI. (2024). "GPT-4 Realtime API Documentation"
-2. Nielsen, J. (1994). "Usability Engineering" - discussing cognitive load in UI design
-3. Shneiderman, B. (2016). "The New ABCs of Research: Achieving Breakthrough Collaborations" - on human-computer collaboration
-4. Norman, D. (2013). "The Design of Everyday Things" - principles of intuitive design
-5. MulmoChat GitHub Repository: [Project URL]
+1. Karpathy, A. (2023). "LLM OS" - https://x.com/karpathy/status/1723140519554105733
+2. OpenAI. (2024). "GPT-4 Realtime API Documentation"
+3. Nielsen, J. (1994). "Usability Engineering" - discussing cognitive load in UI design
+4. Shneiderman, B. (2016). "The New ABCs of Research: Achieving Breakthrough Collaborations" - on human-computer collaboration
+5. Norman, D. (2013). "The Design of Everyday Things" - principles of intuitive design
+6. MulmoChat GitHub Repository: [https://github.com/receptron/MulmoChat]
 
 ## Appendix A: Plugin Interface Specification
 
