@@ -1,10 +1,14 @@
-# Beyond the Sea of App Icons: Where Conversation Becomes the Interface
+# Beyond the Sea of App Icons: Computing in the Age of Intent
 
 ## Abstract
 
-For over 50 years, operating systems have assumed that applications are discrete programs with fixed interfaces, that users navigate through hierarchical menus and icons, and that human-computer interaction happens through pointing, clicking, and typing.
+> Inspired by Andrej Karpathy’s “LLM OS” concept, this work extends the vision into a full architectural and UX paradigm.
 
-This document proposes a radical reimagining: an **AI-native operating system** designed from first principles for the age of Large Language Models (LLMs). In this paradigm, **conversation** becomes the universal interface, **applications** dissolve into composable **capabilities**, and the **LLM orchestrator** understands user intent and dynamically assembles the right tools to help.
+For over 50 years, operating systems have revolved around **applications**—discrete programs represented by icons that users must discover, launch, and learn to operate through their unique interfaces. This model has led to what can be called the **sea of app icons**—a fragmented digital ocean where each island (app) demands its own rules, layouts, and gestures. The issue isn’t the graphical interface itself, but the **app-centric experience** that forces users to repeatedly learn and navigate each tool’s unique logic.
+
+The **AI-native operating system** proposes a new paradigm. Graphical user interfaces remain, but they are no longer the **primary mode** of interaction. Instead, **conversation**—natural language interaction between human and machine—becomes the universal interface. In this model, **the Large Language Model (LLM)** serves as an intelligent orchestrator that understands user intent, dynamically assembles the right tools (capabilities), and presents results through adaptive, context-aware GUIs when needed.
+
+This shift transforms computing from interface navigation to **intent expression**. Users no longer need to memorize app boundaries or workflows; they simply articulate what they want to accomplish, and the system takes care of the rest. The result is a simpler, more natural, and more human way to interact with computers—**beyond the sea of app icons**.
 
 ---
 
