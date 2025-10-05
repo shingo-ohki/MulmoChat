@@ -8,6 +8,16 @@ For over 50 years, operating systems have revolved around **applications**—dis
 
 The **AI-native operating system** proposes a new paradigm. Graphical user interfaces remain, but they are no longer the **primary mode** of interaction. Instead, **conversation**—natural language interaction between human and machine—becomes the universal interface. In this model, **the Large Language Model (LLM)** serves as an intelligent orchestrator that understands user intent, dynamically assembles the right tools (capabilities), and presents results through adaptive, context-aware GUIs when needed.
 
+Consider Maria, a small business owner. She wants to create a social media post about her new product. In today's world, she must:
+1. Open a notes app to write the text
+2. Open a photo editing app to create the image
+3. Remember which filter she used last time for brand consistency
+4. Open Instagram, then Facebook, then Twitter
+5. Copy-paste the text into each app separately
+6. Upload the image to each app separately
+
+She spends 20 minutes managing apps instead of focusing on her business. What if she could just say: "Create a social media post about my new lavender soap with a purple theme, and share it everywhere"?
+
 This shift transforms computing from interface navigation to **intent expression**. Users no longer need to memorize app boundaries or workflows; they simply articulate what they want to accomplish, and the system takes care of the rest. The result is a simpler, more natural, and more human way to interact with computers—**beyond the sea of app icons**.
 
 ---
@@ -32,15 +42,15 @@ This model worked when computing resources were limited, but now creates frictio
 * **Discovery Problem**: Features hidden in menus remain unused
 * **Learning Curve**: Productivity depends on memorizing interfaces
 
-### The WIMP Paradigm’s Limits
+### Why Apps Feel Like Work
 
-The **Windows, Icons, Menus, Pointer (WIMP)** interface—introduced in the 1980s—made computers accessible, but it’s fundamentally constrained:
+The graphical interface—clicking icons, navigating menus, tapping buttons—made computers easier to use in the 1980s, but today it creates unnecessary friction:
 
-* **Spatial Navigation**: Users must visually locate and click elements
-* **Fixed Layouts**: Developers predefine visible options
-* **Mode-Based Interaction**: Different screens for different tasks
-* **Explicit Actions**: Every operation must be manually invoked
-* **Limited Context Awareness**: Apps don’t understand user intent
+* **Visual hunting**: You must find and click the right button among dozens
+* **Rigid menus**: You can only do what developers put on screen
+* **Screen jumping**: Different tasks require completely different screens
+* **Manual everything**: You must explicitly trigger every single action
+* **No understanding**: Apps don't know what you're trying to accomplish
 
 ---
 
@@ -147,9 +157,9 @@ AI-native systems anticipate needs:
 ## Core Architecture
 
 ```
-User → NL Interface → LLM Orchestrator → Capability Registry → Execution Engine → Presentation Layer
-             ↑                                           ↓
-        Context Memory ---------------------------- Learning Layer
+You speak → System understands → System picks the right tools → Tools do the work → You see results
+              ↑                                                                       ↓
+         System remembers context ←----------------------------------------------- System learns your preferences
 ```
 
 ### Layers
@@ -200,10 +210,10 @@ User → NL Interface → LLM Orchestrator → Capability Registry → Execution
 
 ### For Users
 
-* Zero learning curve (natural language)
-* No app juggling
-* Personalized experience
-* Accessibility via voice and context
+* **Zero learning curve**: If you can have a conversation, you can use any feature
+* **No app juggling**: Stop switching between 5 different apps to complete one task
+* **Personalized experience**: The system learns you prefer visual explanations, or that you always want weather in Celsius
+* **True accessibility**: Your grandmother can use advanced features just by talking, without reading tiny menu text or remembering where buttons are
 
 ### For Developers
 
