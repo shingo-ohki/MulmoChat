@@ -220,6 +220,21 @@ The main canvas dynamically renders whatever component the current plugin provid
 
 ### 4.3 Plugin Example: Image Generation
 
+**Scenario**: A user asks, "How does a jet engine work?"
+
+The LLM begins explaining the concept verbally, but autonomously decides to generate a visual aid to enhance understanding:
+
+```
+User: "How does a jet engine work?"
+LLM: "A jet engine works by compressing air, mixing it with fuel,
+      igniting it, and expelling the hot gases to create thrust..."
+      [Calls generateImage("cross-section diagram of jet engine showing compressor, combustion chamber, and turbine")]
+[Visual diagram appears on canvas]
+LLM: "As you can see in the diagram, air enters through the intake..."
+```
+
+The user never explicitly requested an image—the LLM understood that complex mechanical concepts benefit from visual representation and proactively invoked the appropriate tool. This demonstrates the intelligence of the orchestration layer.
+
 **Tool Definition** (sent to LLM):
 ```typescript
 {
@@ -255,7 +270,7 @@ async execute(context, args) {
 </template>
 ```
 
-The user never needs to know an "image generation app" exists—they simply ask for an image, and it appears.
+The user never needs to know an "image generation app" exists—they ask about jet engines, and the LLM autonomously generates visual aids to enhance understanding.
 
 ## 5. Benefits and Implications
 
@@ -297,26 +312,11 @@ User: "Create a presentation about EV market trends"
 
 All within one conversational thread—no app switching.
 
-### 5.4 Emergent Capabilities
-
-As plugins are added, capabilities emerge without user intervention:
-- No need to visit app store
-- No installation process
-- No learning new UIs
-- Instant availability through natural language
-
-Example: Adding a `calendar` plugin automatically enables:
-- "Schedule a meeting"
-- "What's on my calendar tomorrow?"
-- "Find a free slot next week"
-
-The LLM understands these intents immediately.
-
 ## 6. Technical Innovations
 
 ### 6.1 Multi-Modal Function Calling
 
-Traditional OpenAI function calling returns JSON only. We extend this with visual components:
+Traditional function calling returns JSON for the LLM to process. We extend this with plugin specific data, which allows the plugin to interact with the user via its graphical view:
 
 ```typescript
 // Traditional: LLM receives only JSON
@@ -397,17 +397,7 @@ catch (error) {
 
 The LLM gracefully handles errors conversationally.
 
-### 7.3 Privacy and Security
-
-**Challenge**: Granting LLM access to plugin ecosystem raises security concerns.
-
-**Solution**:
-- Ephemeral API keys from server (not exposed to client)
-- Plugin-level permission gates via `isEnabled()`
-- Sandboxed plugin execution
-- Transparent logging of all function calls
-
-### 7.4 Latency
+### 7.3 Latency
 
 **Challenge**: Multi-step workflows could feel slow.
 
@@ -419,6 +409,7 @@ The LLM gracefully handles errors conversationally.
 ```typescript
 waitingMessage: "I'm generating your image now. This will take a moment."
 ```
+- Deferred processing: The presentation plugin (mulmocast) returns results (text and images) quickly and performs slow operations (generating video) after the view is presented to the user, caching the result for future use
 
 ## 8. Future Directions
 
@@ -507,54 +498,9 @@ LLM executes:
 
 The LLM bridges intent to implementation through understanding, not keyword matching.
 
-## 10. Evaluation Metrics
+## 10. Philosophical Implications
 
-### 10.1 Task Completion Efficiency
-
-**Metric**: Steps required to complete common tasks
-
-Example: "Book a restaurant reservation"
-
-Traditional OS:
-1. Unlock device
-2. Find restaurant app icon
-3. Open app
-4. Search restaurant
-5. Select date/time
-6. Enter party size
-7. Confirm booking
-**Total: 7+ steps**
-
-LLM-OS:
-1. "Book a table at [restaurant] for 4 people tonight at 7pm"
-**Total: 1 step**
-
-### 10.2 Learning Time
-
-**Metric**: Time to proficiency with new capability
-
-Traditional: 10-30 minutes per new app (download, explore UI, learn features)
-
-LLM-OS: 0 minutes (capabilities available immediately through natural language)
-
-### 10.3 User Satisfaction
-
-Preliminary user testing shows:
-- 87% prefer conversational interface over app navigation
-- 92% report reduced frustration with task completion
-- 78% complete tasks faster than traditional apps
-- 95% find system easier to learn
-
-### 10.4 Accessibility Impact
-
-- 100% of tasks completable via voice alone
-- Zero precision pointing required
-- No visual UI comprehension needed for basic operations
-- Reduced literacy requirements (spoken language vs. UI text)
-
-## 11. Philosophical Implications
-
-### 11.1 From Tool Mastery to Intent Expression
+### 10.1 From Tool Mastery to Intent Expression
 
 Traditional computing requires users to become "tool masters"—experts in wielding specific applications. The LLM-OS model shifts the burden from user to system:
 
@@ -563,7 +509,7 @@ Traditional computing requires users to become "tool masters"—experts in wield
 
 This mirrors the evolution from command-line interfaces to GUIs—but goes further by eliminating the need to learn visual interfaces entirely.
 
-### 11.2 The Computer as Colleague
+### 10.2 The Computer as Colleague
 
 Rather than a collection of passive tools, the LLM-OS presents the computer as an intelligent colleague:
 - Understands natural language requests
@@ -574,7 +520,7 @@ Rather than a collection of passive tools, the LLM-OS presents the computer as a
 
 This transforms human-computer interaction from command-response to collaboration.
 
-### 11.3 Democratization of Computing
+### 10.3 Democratization of Computing
 
 By eliminating app-specific knowledge requirements, the LLM-OS makes computing truly universal:
 - Children can use advanced capabilities without reading menus
@@ -584,7 +530,7 @@ By eliminating app-specific knowledge requirements, the LLM-OS makes computing t
 
 Computing becomes as accessible as conversation.
 
-## 12. Conclusion
+## 11. Conclusion
 
 The "sea of app icons" represents a fundamental mismatch between how humans think (intent-based, task-oriented) and how computers present functionality (app-based, tool-oriented). By placing an LLM as the controller in an MVC architecture, we resolve this mismatch.
 
