@@ -1,6 +1,6 @@
-import { ToolPlugin, ToolContext, ToolResult } from "./type";
-import ExaView from "./views/exa.vue";
-import ExaPreview from "./previews/exa.vue";
+import { ToolPlugin, ToolContext, ToolResult } from "../type";
+import ExaView from "../views/exa.vue";
+import ExaPreview from "../previews/exa.vue";
 
 const toolName = "exaSearch";
 

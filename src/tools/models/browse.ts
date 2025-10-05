@@ -1,6 +1,6 @@
-import { ToolPlugin, ToolContext, ToolResult } from "./type";
-import BrowseView from "./views/browse.vue";
-import BrowsePreview from "./previews/browse.vue";
+import { ToolPlugin, ToolContext, ToolResult } from "../type";
+import BrowseView from "../views/browse.vue";
+import BrowsePreview from "../previews/browse.vue";
 
 const toolName = "browse";
 

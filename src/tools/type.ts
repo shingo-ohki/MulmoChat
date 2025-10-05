@@ -1,14 +1,14 @@
-import * as GenerateImagePlugin from "./generateImage";
-import * as EditImagePlugin from "./editImage";
-import * as BrowsePlugin from "./browse";
-import * as MulmocastPlugin from "./mulmocast";
-import * as MapPlugin from "./map";
-import * as ExaPlugin from "./exa";
-import * as OthelloPlugin from "./othello";
-import * as CanvasPlugin from "./canvas";
-import * as MarkdownPlugin from "./markdown";
-import * as QuizPlugin from "./quiz";
-import * as MusicPlugin from "./music";
+import * as GenerateImagePlugin from "./models/generateImage";
+import * as EditImagePlugin from "./models/editImage";
+import * as BrowsePlugin from "./models/browse";
+import * as MulmocastPlugin from "./models/mulmocast";
+import * as MapPlugin from "./models/map";
+import * as ExaPlugin from "./models/exa";
+import * as OthelloPlugin from "./models/othello";
+import * as CanvasPlugin from "./models/canvas";
+import * as MarkdownPlugin from "./models/markdown";
+import * as QuizPlugin from "./models/quiz";
+import * as MusicPlugin from "./models/music";
 import type { StartApiResponse } from "../../server/types";
 import { v4 as uuidv4 } from "uuid";
 

@@ -1,6 +1,6 @@
-import { ToolPlugin, ToolContext, ToolResult } from "./type";
-import MusicView from "./views/music.vue";
-import MusicPreview from "./previews/music.vue";
+import { ToolPlugin, ToolContext, ToolResult } from "../type";
+import MusicView from "../views/music.vue";
+import MusicPreview from "../previews/music.vue";
 
 const toolName = "pushMusic";
 

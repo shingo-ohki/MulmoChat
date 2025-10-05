@@ -1,6 +1,6 @@
-import { ToolPlugin, ToolContext, ToolResult } from "./type";
-import MarkdownView from "./views/markdown.vue";
-import MarkdownPreview from "./previews/markdown.vue";
+import { ToolPlugin, ToolContext, ToolResult } from "../type";
+import MarkdownView from "../views/markdown.vue";
+import MarkdownPreview from "../previews/markdown.vue";
 import { loadBlankImageBase64 } from "./mulmocast";
 
 const toolName = "pushMarkdown";

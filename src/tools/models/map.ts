@@ -1,6 +1,6 @@
-import { ToolPlugin, ToolContext, ToolResult } from "./type";
-import MapView from "./views/map.vue";
-import MapPreview from "./previews/map.vue";
+import { ToolPlugin, ToolContext, ToolResult } from "../type";
+import MapView from "../views/map.vue";
+import MapPreview from "../previews/map.vue";
 
 const toolName = "presentMap";
 

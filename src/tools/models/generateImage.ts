@@ -1,6 +1,6 @@
-import { ToolPlugin, ToolContext, ToolResult } from "./type";
-import ImageView from "./views/image.vue";
-import ImagePreview from "./previews/image.vue";
+import { ToolPlugin, ToolContext, ToolResult } from "../type";
+import ImageView from "../views/image.vue";
+import ImagePreview from "../previews/image.vue";
 
 const toolName = "generateImage";
 

@@ -1,7 +1,7 @@
-import { ToolPlugin, ToolContext, ToolResult } from "./type";
+import { ToolPlugin, ToolContext, ToolResult } from "../type";
 import { generateImageCommon } from "./generateImage";
-import ImageView from "./views/image.vue";
-import ImagePreview from "./previews/image.vue";
+import ImageView from "../views/image.vue";
+import ImagePreview from "../previews/image.vue";
 
 const toolName = "editImage";
 

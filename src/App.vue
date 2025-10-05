@@ -69,7 +69,7 @@ import {
   ToolContext,
   getToolPlugin,
 } from "./tools/type";
-import { createUploadedImageResult } from "./tools/generateImage";
+import { createUploadedImageResult } from "./tools/models/generateImage";
 import type { StartApiResponse } from "../server/types";
 import Sidebar from "./components/Sidebar.vue";
 import { DEFAULT_LANGUAGE_CODE, getLanguageName } from "./config/languages";

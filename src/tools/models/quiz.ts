@@ -1,6 +1,6 @@
-import { ToolPlugin, ToolContext, ToolResult } from "./type";
-import QuizView from "./views/quiz.vue";
-import QuizPreview from "./previews/quiz.vue";
+import { ToolPlugin, ToolContext, ToolResult } from "../type";
+import QuizView from "../views/quiz.vue";
+import QuizPreview from "../previews/quiz.vue";
 
 const toolName = "putQuestions";
 
