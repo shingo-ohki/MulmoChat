@@ -26,8 +26,8 @@
                   >
                     <a
                       :href="result.url"
-                      target="_blank"
                       class="hover:underline"
+                      @click="(e) => handleLinkClick(e, result.url)"
                     >
                       {{ result.title }}
                     </a>
@@ -81,7 +81,7 @@ defineOptions({
   inheritAttrs: false,
 });
 
-defineProps<{
+const props = defineProps<{
   selectedResult: ToolResult | null;
   sendTextMessage: (text?: string) => void;
 }>();
@@ -89,4 +89,15 @@ defineProps<{
 defineEmits<{
   updateResult: [];
 }>();
+
+const handleLinkClick = (e: MouseEvent, url: string) => {
+  if (e.metaKey || e.ctrlKey) {
+    // Command/Ctrl key pressed - allow default behavior (open in new tab)
+    return;
+  }
+
+  // Otherwise, prevent default and tell LLM to browse
+  e.preventDefault();
+  props.sendTextMessage(`Browse to ${url}`);
+};
 </script>
