@@ -9,7 +9,7 @@
 
 ## Abstract
 
-This paper introduces a novel operating system architecture where a Large Language Model (LLM) functions as an intelligent controller in an MVC pattern, orchestrating a plugin ecosystem through natural language commands. This architecture fundamentally eliminates the "sea of app icons" problem that has plagued user interfaces since the advent of graphical operating systems. By replacing the traditional app-centric model with an intent-centric model, users interact through natural conversation rather than navigating discrete applications, dramatically reducing cognitive load and learning curves.
+This paper presents a technical architecture that fundamentally eliminates the "sea of app icons" problem by making **natural language conversation** the primary interface. A Large Language Model (LLM) orchestrates a plugin ecosystem, understanding user intent and invoking appropriate tools through function calling. The key innovation is extending the traditional function calling mechanism to support **multi-modal interaction**: plugins return not only data to the LLM, but also graphical interface components that provide rich visual feedback to users. This dual-channel approach combines the natural interaction of conversation with the power of visual interfaces, allowing users to express what they want to accomplish rather than learning how to navigate discrete applications.
 
 ## 1. Introduction
 
@@ -48,7 +48,7 @@ Dynamic Visual Interface
 **Controller (LLM)**
 - Receives natural language input via voice or text
 - Understands user intent through contextual reasoning
-- Selects appropriate plugins via OpenAI function calling
+- Selects appropriate plugins via function calling
 - Orchestrates multi-step workflows
 - Generates conversational feedback
 
@@ -60,11 +60,13 @@ Dynamic Visual Interface
 
 **View (Dynamic Component Rendering)**
 - Plugin-specific Vue components
-- Main canvas view for detailed interaction
-- Sidebar preview thumbnails
-- No plugin-specific code in core UI
+- Main canvas view for multi-modal presentation
+- Direct interaction via GUI
+- Indirect voice interaction through the LLM
 
 ### 2.2 Core Interfaces
+
+The following interfaces represent one possible implementation in TypeScript and Vue, which our first prototype (MulmoChat) uses to demonstrate the architecture:
 
 ```typescript
 interface ToolPlugin {
@@ -84,7 +86,7 @@ interface ToolResult {
   message: string;        // Status for LLM
   jsonData?: any;         // Structured data for LLM
   instructions?: string;  // Follow-up prompts
-  data?: object;          // Visual component data
+  data?: object;          // Plug-in specific data
   viewState?: object;     // UI state
   updating?: boolean;     // In-place update flag
 }
