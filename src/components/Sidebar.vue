@@ -144,6 +144,30 @@
         <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
+              System Prompt
+            </label>
+            <select
+              :value="systemPromptId"
+              @change="
+                $emit(
+                  'update:systemPromptId',
+                  ($event.target as HTMLSelectElement).value,
+                )
+              "
+              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option
+                v-for="prompt in SYSTEM_PROMPTS"
+                :key="prompt.id"
+                :value="prompt.id"
+              >
+                {{ prompt.name }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
               Native Language
             </label>
             <select
@@ -204,6 +228,7 @@ import { ref, nextTick, defineProps, defineEmits } from "vue";
 import type { ToolResult } from "../tools";
 import { getToolPlugin } from "../tools";
 import { LANGUAGES } from "../config/languages";
+import { SYSTEM_PROMPTS } from "../config/systemPrompts";
 
 defineProps<{
   chatActive: boolean;
@@ -216,6 +241,7 @@ defineProps<{
   isMuted: boolean;
   userLanguage: string;
   suppressInstructions: boolean;
+  systemPromptId: string;
 }>();
 
 const emit = defineEmits<{
@@ -227,6 +253,7 @@ const emit = defineEmits<{
   "update:userInput": [value: string];
   "update:userLanguage": [value: string];
   "update:suppressInstructions": [value: boolean];
+  "update:systemPromptId": [value: string];
   uploadImages: [imageData: string[], fileNames: string[]];
 }>();
 

@@ -23,6 +23,7 @@
         :is-muted="isMuted"
         :user-language="userLanguage"
         :suppress-instructions="suppressInstructions"
+        :system-prompt-id="systemPromptId"
         @start-chat="startChat"
         @stop-chat="stopChat"
         @set-mute="setMute"
@@ -31,6 +32,7 @@
         @update:user-input="userInput = $event"
         @update:user-language="userLanguage = $event"
         @update:suppress-instructions="suppressInstructions = $event"
+        @update:system-prompt-id="systemPromptId = $event"
         @upload-images="handleUploadImages"
       />
 
@@ -75,11 +77,14 @@ import { createUploadedImageResult } from "./tools/models/generateImage";
 import type { StartApiResponse } from "../server/types";
 import Sidebar from "./components/Sidebar.vue";
 import { DEFAULT_LANGUAGE_CODE, getLanguageName } from "./config/languages";
+import {
+  DEFAULT_SYSTEM_PROMPT_ID,
+  getSystemPrompt,
+} from "./config/systemPrompts";
 
 const USER_LANGUAGE_KEY = "user_language_v1";
 const SUPPRESS_INSTRUCTIONS_KEY = "suppress_instructions_v1";
-const SYSTEM_PROMPT =
-  "You are a teacher who explains various things in a way that even middle school students can easily understand. When you are talking about places, objects, people, movies, books and other things, you MUST use the generateImage API to draw pictures to make the conversation more engaging. Call the pushMarkdown API to display documents when the user is asking for a document. Call the pushMulmoScript API to display presentations when the user is asking for a presentation. If the user is asking for stock price, browse Yahoo Finance page with the ticker symbol, such as https://finance.yahoo.com/quote/TSLA/ or https://finance.yahoo.com/quote/BTC-USD/.";
+const SYSTEM_PROMPT_ID_KEY = "system_prompt_id_v1";
 const sidebarRef = ref<InstanceType<typeof Sidebar> | null>(null);
 const connecting = ref(false);
 const userLanguage = ref(
@@ -87,6 +92,9 @@ const userLanguage = ref(
 );
 const suppressInstructions = ref(
   localStorage.getItem(SUPPRESS_INSTRUCTIONS_KEY) === "true",
+);
+const systemPromptId = ref(
+  localStorage.getItem(SYSTEM_PROMPT_ID_KEY) || DEFAULT_SYSTEM_PROMPT_ID,
 );
 const messages = ref<string[]>([]);
 const currentText = ref("");
@@ -105,6 +113,10 @@ watch(userLanguage, (val) => {
 
 watch(suppressInstructions, (val) => {
   localStorage.setItem(SUPPRESS_INSTRUCTIONS_KEY, String(val));
+});
+
+watch(systemPromptId, (val) => {
+  localStorage.setItem(SYSTEM_PROMPT_ID_KEY, val);
 });
 
 const chatActive = ref(false);
@@ -344,13 +356,18 @@ async function startChat(): Promise<void> {
     const dc = webrtc.pc.createDataChannel("oai-events");
     webrtc.dc = dc;
     dc.addEventListener("open", () => {
+      const selectedPrompt = getSystemPrompt(systemPromptId.value);
+      const instructions = selectedPrompt
+        ? `${selectedPrompt.prompt} The user's native language is ${getLanguageName(userLanguage.value)}.`
+        : `The user's native language is ${getLanguageName(userLanguage.value)}.`;
+
       dc.send(
         JSON.stringify({
           type: "session.update",
           session: {
             type: "realtime",
             model: "gpt-realtime",
-            instructions: `${SYSTEM_PROMPT} The user's native language is ${getLanguageName(userLanguage.value)}.`,
+            instructions,
             audio: {
               output: {
                 voice: "shimmer",
