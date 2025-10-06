@@ -85,6 +85,8 @@ import {
 const USER_LANGUAGE_KEY = "user_language_v1";
 const SUPPRESS_INSTRUCTIONS_KEY = "suppress_instructions_v1";
 const SYSTEM_PROMPT_ID_KEY = "system_prompt_id_v1";
+const LISTENER_MODE_SPEECH_THRESHOLD_MS = 30000; // Only disable audio after this much time since speech started
+const LISTENER_MODE_AUDIO_GAP_MS = 5000; // Duration of the intentional audio gap
 const sidebarRef = ref<InstanceType<typeof Sidebar> | null>(null);
 const connecting = ref(false);
 const userLanguage = ref(
@@ -124,6 +126,7 @@ const conversationActive = ref(false);
 const isMuted = ref(false);
 
 const isListenerMode = computed(() => systemPromptId.value === "listener");
+const lastSpeechStartedTime = ref<number | null>(null);
 
 const webrtc = {
   pc: null as RTCPeerConnection | null,
@@ -333,19 +336,26 @@ function messageHandler(event: MessageEvent): void {
     case "input_audio_buffer.speech_stopped":
       if (isListenerMode.value) {
         console.log("MSG: Speech stopped");
-        /*
-        // When the speech is stopped for a short time, we intentionally create a large gap so that the server thinks the user has paused.
-        // We may miss a few words, but it's better than having the server think the user is still speaking.
-        const audioTracks = webrtc.localStream?.getAudioTracks();
-        if (audioTracks) {
-          audioTracks.forEach((track) => {
-            track.enabled = false;
-          });
+        // Only execute the gap logic if more than 10 seconds has passed since the last speech_started
+        const timeSinceLastStart = lastSpeechStartedTime.value
+          ? Date.now() - lastSpeechStartedTime.value
+          : 0;
+
+        if (timeSinceLastStart > LISTENER_MODE_SPEECH_THRESHOLD_MS) {
+          console.log("MSG: Speech stopped for a long time");
+          // When the speech is stopped for a long time, we intentionally create a large gap so that the server thinks the user has paused.
+          // We may miss a few words, but it's better than having the server think the user is still speaking.
+          const audioTracks = webrtc.localStream?.getAudioTracks();
+          if (audioTracks) {
+            audioTracks.forEach((track) => {
+              track.enabled = false;
+            });
+          }
+          setTimeout(() => {
+            setMute(isMuted.value);
+            lastSpeechStartedTime.value = Date.now();
+          }, LISTENER_MODE_AUDIO_GAP_MS);
         }
-        setTimeout(() => {
-          setMute(isMuted.value);
-        }, 5000);
-        */
       }
       break;
   }
@@ -356,6 +366,7 @@ async function startChat(): Promise<void> {
   if (chatActive.value || connecting.value) return;
 
   connecting.value = true;
+  lastSpeechStartedTime.value = Date.now();
 
   // Call the start API endpoint to get ephemeral key
   try {
