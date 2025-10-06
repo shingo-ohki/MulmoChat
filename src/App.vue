@@ -300,6 +300,13 @@ function messageHandler(event: MessageEvent): void {
     case "response.function_call_arguments.done": {
       const argStr = pendingToolArgs[id] || msg.arguments || "";
       delete pendingToolArgs[id];
+      if (msg.truncated) {
+        console.warn(
+          `******* Abandoning truncated tool call for ${msg.name || msg.call_id}`,
+        );
+        processedToolCalls.delete(id);
+        break;
+      }
       const previousArgs = processedToolCalls.get(id);
       if (previousArgs === argStr) {
         console.warn(
@@ -326,6 +333,19 @@ function messageHandler(event: MessageEvent): void {
     case "input_audio_buffer.speech_stopped":
       if (isListenerMode.value) {
         console.log("MSG: Speech stopped");
+        /*
+        // When the speech is stopped for a short time, we intentionally create a large gap so that the server thinks the user has paused.
+        // We may miss a few words, but it's better than having the server think the user is still speaking.
+        const audioTracks = webrtc.localStream?.getAudioTracks();
+        if (audioTracks) {
+          audioTracks.forEach((track) => {
+            track.enabled = false;
+          });
+        }
+        setTimeout(() => {
+          setMute(isMuted.value);
+        }, 5000);
+        */
       }
       break;
   }
