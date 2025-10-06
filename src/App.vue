@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick } from "vue";
+import { ref, watch, nextTick, computed } from "vue";
 import {
   pluginTools,
   toolExecute,
@@ -122,6 +122,8 @@ watch(systemPromptId, (val) => {
 const chatActive = ref(false);
 const conversationActive = ref(false);
 const isMuted = ref(false);
+
+const isListenerMode = computed(() => systemPromptId.value === "listener");
 
 const webrtc = {
   pc: null as RTCPeerConnection | null,
@@ -305,6 +307,7 @@ function messageHandler(event: MessageEvent): void {
         );
         break;
       }
+      console.log(`MSG: toolcall\n${argStr}`);
       processedToolCalls.set(id, argStr);
       processToolCall(msg, id, argStr);
       break;
@@ -314,6 +317,16 @@ function messageHandler(event: MessageEvent): void {
       break;
     case "response.done":
       conversationActive.value = false;
+      break;
+    case "input_audio_buffer.speech_started":
+      if (isListenerMode.value) {
+        console.log("MSG: Speech started");
+      }
+      break;
+    case "input_audio_buffer.speech_stopped":
+      if (isListenerMode.value) {
+        console.log("MSG: Speech stopped");
+      }
       break;
   }
 }
