@@ -194,12 +194,10 @@ async function processToolCall(
       scrollCurrentResultToTop();
     }
 
-    const outputPayload: Record<string, unknown> = {
+    const outputPayload = {
       status: result.message,
+      data: result.jsonData,
     };
-    if (result.jsonData) {
-      outputPayload.data = result.jsonData;
-    }
     console.log(`RES:${result.toolName}\n`, outputPayload);
     webrtc.dc?.send(
       JSON.stringify({
