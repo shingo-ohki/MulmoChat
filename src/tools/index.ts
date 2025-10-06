@@ -5,6 +5,7 @@ import * as MulmocastPlugin from "./models/mulmocast";
 import * as MapPlugin from "./models/map";
 import * as ExaPlugin from "./models/exa";
 import * as OthelloPlugin from "./models/othello";
+import * as GoPlugin from "./models/go";
 import * as CanvasPlugin from "./models/canvas";
 import * as MarkdownPlugin from "./models/markdown";
 import * as QuizPlugin from "./models/quiz";
@@ -28,6 +29,7 @@ const pluginList = [
   MapPlugin,
   ExaPlugin,
   OthelloPlugin,
+  GoPlugin,
   CanvasPlugin,
   MarkdownPlugin,
   QuizPlugin,
