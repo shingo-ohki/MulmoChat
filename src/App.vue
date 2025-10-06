@@ -22,6 +22,7 @@
         :user-input="userInput"
         :is-muted="isMuted"
         :user-language="userLanguage"
+        :suppress-instructions="suppressInstructions"
         @start-chat="startChat"
         @stop-chat="stopChat"
         @set-mute="setMute"
@@ -29,6 +30,7 @@
         @send-text-message="sendTextMessage"
         @update:user-input="userInput = $event"
         @update:user-language="userLanguage = $event"
+        @update:suppress-instructions="suppressInstructions = $event"
         @upload-images="handleUploadImages"
       />
 
@@ -75,12 +77,16 @@ import Sidebar from "./components/Sidebar.vue";
 import { DEFAULT_LANGUAGE_CODE, getLanguageName } from "./config/languages";
 
 const USER_LANGUAGE_KEY = "user_language_v1";
+const SUPPRESS_INSTRUCTIONS_KEY = "suppress_instructions_v1";
 const SYSTEM_PROMPT =
   "You are a teacher who explains various things in a way that even middle school students can easily understand. When you are talking about places, objects, people, movies, books and other things, you MUST use the generateImage API to draw pictures to make the conversation more engaging. Call the pushMarkdown API to display documents when the user is asking for a document. Call the pushMulmoScript API to display presentations when the user is asking for a presentation. If the user is asking for stock price, browse Yahoo Finance page with the ticker symbol, such as https://finance.yahoo.com/quote/TSLA/ or https://finance.yahoo.com/quote/BTC-USD/.";
 const sidebarRef = ref<InstanceType<typeof Sidebar> | null>(null);
 const connecting = ref(false);
 const userLanguage = ref(
   localStorage.getItem(USER_LANGUAGE_KEY) || DEFAULT_LANGUAGE_CODE,
+);
+const suppressInstructions = ref(
+  localStorage.getItem(SUPPRESS_INSTRUCTIONS_KEY) === "true",
 );
 const messages = ref<string[]>([]);
 const currentText = ref("");
@@ -95,6 +101,10 @@ const startResponse = ref<StartApiResponse | null>(null);
 
 watch(userLanguage, (val) => {
   localStorage.setItem(USER_LANGUAGE_KEY, val);
+});
+
+watch(suppressInstructions, (val) => {
+  localStorage.setItem(SUPPRESS_INSTRUCTIONS_KEY, String(val));
 });
 
 const chatActive = ref(false);
@@ -209,7 +219,7 @@ async function processToolCall(
         },
       }),
     );
-    if (result.instructions) {
+    if (result.instructions && !suppressInstructions.value) {
       const delay = getToolPlugin(msg.name)?.delayAfterExecution;
       if (delay) {
         await sleep(delay);

@@ -166,6 +166,25 @@
             </select>
           </div>
 
+          <div>
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                :checked="suppressInstructions"
+                @change="
+                  $emit(
+                    'update:suppressInstructions',
+                    ($event.target as HTMLInputElement).checked,
+                  )
+                "
+                class="rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+              />
+              <span class="text-sm font-medium text-gray-700">
+                Suppress Instructions
+              </span>
+            </label>
+          </div>
+
           <div class="flex justify-end">
             <button
               @click="showConfigPopup = false"
@@ -196,6 +215,7 @@ defineProps<{
   userInput: string;
   isMuted: boolean;
   userLanguage: string;
+  suppressInstructions: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -206,6 +226,7 @@ const emit = defineEmits<{
   sendTextMessage: [];
   "update:userInput": [value: string];
   "update:userLanguage": [value: string];
+  "update:suppressInstructions": [value: boolean];
   uploadImages: [imageData: string[], fileNames: string[]];
 }>();
 
