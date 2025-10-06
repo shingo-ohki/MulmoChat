@@ -219,7 +219,10 @@ async function processToolCall(
         },
       }),
     );
-    if (result.instructions && (!suppressInstructions.value || result.instructionsRequired)) {
+    if (
+      result.instructions &&
+      (!suppressInstructions.value || result.instructionsRequired)
+    ) {
       const delay = getToolPlugin(msg.name)?.delayAfterExecution;
       if (delay) {
         await sleep(delay);

@@ -26,6 +26,8 @@ const props = defineProps({
   },
 });
 
+const emit = defineEmits(["error"]);
+
 const mapContainer = ref(null);
 let map = null;
 let marker = null;
@@ -74,6 +76,7 @@ const initMap = async () => {
     });
   } catch (error) {
     console.error("Error initializing map:", error);
+    emit("error", error.message || "Error initializing map");
   }
 };
 
@@ -85,6 +88,7 @@ const updateLocation = async (newLocation) => {
       marker.position = coordinates;
     } catch (error) {
       console.error("Error updating location:", error);
+      emit("error", error.message || "Error updating location");
     }
   }
 };
@@ -131,6 +135,7 @@ onMounted(async () => {
     await initMap();
   } catch (error) {
     console.error("Error loading Google Maps:", error);
+    emit("error", error.message || "Error loading Google Maps");
   }
 });
 
