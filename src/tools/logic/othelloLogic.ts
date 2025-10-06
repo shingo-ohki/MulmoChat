@@ -36,6 +36,7 @@ export type OthelloState = {
     | { type: "new_game" }
     | { type: "move"; row: number; col: number; flipped: number }
     | { type: "pass" };
+  error?: string;
 };
 
 const DIRECTIONS = [
@@ -253,9 +254,20 @@ export function playOthello(cmd: Command): OthelloState {
 
   // Validate the move
   if (!isLegalMove(board, row, col, currentSide)) {
-    throw new Error(
-      `Invalid move: (${row}, ${col}) is not a legal move for ${currentSide}`,
-    );
+    const legalMoves = getLegalMoves(board, currentSide);
+    const counts = countPieces(board);
+
+    return {
+      board,
+      currentSide,
+      playerNames,
+      legalMoves,
+      counts,
+      isTerminal: false,
+      winner: null,
+      lastAction: { type: "pass" }, // Keep previous action type
+      error: `Invalid move: (${row}, ${col}) is not a legal move for ${currentSide}`,
+    };
   }
 
   const { newBoard, flippedCount } = makeMove(board, row, col, currentSide);

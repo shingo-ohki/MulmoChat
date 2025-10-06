@@ -137,6 +137,26 @@ const othello = async (
 
     const state = playOthello(command);
 
+    // Handle invalid move
+    if (state.error) {
+      const isComputerTurn =
+        state.playerNames[state.currentSide] === "computer";
+      const legalMovesStr = state.legalMoves
+        .map((m) => `(${m.row}, ${m.col})`)
+        .join(", ");
+
+      const instructions = isComputerTurn
+        ? `Invalid move attempted. You must make a valid move. Legal moves are: ${legalMovesStr}. Choose one of these moves.`
+        : `Invalid move attempted. Tell the user they must make a valid move. Legal moves are: ${legalMovesStr}. The user will tell you the move by specifying column (A to H) and row (1 to 8).`;
+
+      return {
+        message: state.error,
+        jsonData: state,
+        instructions,
+        updating: true,
+      };
+    }
+
     let message = "";
     if (state.lastAction.type === "new_game") {
       message = "Started a new Othello game! Black (●) goes first.";
