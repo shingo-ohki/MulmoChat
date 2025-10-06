@@ -11,6 +11,7 @@ export interface ToolResult {
   title?: string;
   jsonData?: any; // data to be passed to the LLM
   instructions?: string; // follow-up instructions for the LLM
+  instructionsRequired?: boolean; // if true, instructions will be sent even if suppressInstructions is enabled
   updating?: boolean; // if true, updates existing result instead of creating new one
 
   data?: Record<string, any>; // tool specific data

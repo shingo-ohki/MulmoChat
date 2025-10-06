@@ -178,13 +178,14 @@ const othello = async (
     const instructions = state.isTerminal
       ? "The game is over. Announce the game result."
       : isComputerTurn
-        ? "The game state has been updated. It is your turn (you = AI assistant, computer). Make your move."
+        ? "The game state has been updated. Do not describe the state of the game. It is your turn. You MUSK choose your next move."
         : "The game state has been updated. Tell the user to make a move. Do not describe the state of the game. The user is able to see it. The user will tell you the move by specifying colum (A to H) and row (1 to 8)";
 
     return {
       message,
       jsonData: state,
       instructions,
+      instructionsRequired: state.isTerminal || isComputerTurn,
       updating: args.action !== "new_game",
     };
   } catch (error) {

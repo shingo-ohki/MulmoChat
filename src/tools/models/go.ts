@@ -222,6 +222,7 @@ const go = async (
       message,
       jsonData: state,
       instructions,
+      instructionsRequired: state.isTerminal || isComputerTurn,
       updating: args.action !== "new_game",
     };
   } catch (error) {
