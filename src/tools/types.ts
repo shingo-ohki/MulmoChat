@@ -4,12 +4,12 @@ export interface ToolContext {
   currentResult: ToolResult<any> | null;
 }
 
-export interface ToolResult<T = Record<string, any>> {
+export interface ToolResult<T = Record<string, any>, J = any> {
   toolName?: string; // name of the tool that generated this result
   uuid?: string; // unique identifier for this result
   message: string; // status message sent back to the LLM about the tool execution result
   title?: string;
-  jsonData?: any; // data to be passed to the LLM
+  jsonData?: J; // data to be passed to the LLM
   instructions?: string; // follow-up instructions for the LLM
   instructionsRequired?: boolean; // if true, instructions will be sent even if suppressInstructions is enabled
   updating?: boolean; // if true, updates existing result instead of creating new one
@@ -18,13 +18,13 @@ export interface ToolResult<T = Record<string, any>> {
   viewState?: Record<string, any>; // tool specific view state
 }
 
-export interface ToolResultComplete<T = Record<string, any>>
-  extends ToolResult<T> {
+export interface ToolResultComplete<T = Record<string, any>, J = any>
+  extends ToolResult<T, J> {
   toolName: string;
   uuid: string;
 }
 
-export interface ToolPlugin<T = Record<string, any>> {
+export interface ToolPlugin<T = Record<string, any>, J = any> {
   toolDefinition: {
     type: "function";
     name: string;
@@ -40,7 +40,7 @@ export interface ToolPlugin<T = Record<string, any>> {
   execute: (
     context: ToolContext,
     args: Record<string, any>,
-  ) => Promise<ToolResult<T>>;
+  ) => Promise<ToolResult<T, J>>;
   generatingMessage: string;
   waitingMessage?: string;
   isEnabled: (startResponse?: StartApiResponse) => boolean;

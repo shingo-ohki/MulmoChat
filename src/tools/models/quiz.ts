@@ -16,6 +16,8 @@ export interface QuizData {
   userAnswers?: number[];
 }
 
+export type QuizResult = ToolResult<never, QuizData>;
+
 const toolDefinition = {
   type: "function" as const,
   name: toolName,
@@ -66,7 +68,7 @@ const toolDefinition = {
 const putQuestions = async (
   context: ToolContext,
   args: Record<string, any>,
-): Promise<ToolResult> => {
+): Promise<QuizResult> => {
   try {
     const { title, questions } = args;
 

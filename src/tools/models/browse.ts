@@ -9,6 +9,18 @@ export interface BrowseToolData {
   twitterEmbedHtml?: string | null;
 }
 
+export interface BrowseJsonData {
+  data: {
+    title?: string;
+    description?: string;
+    content?: string;
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
+
+export type BrowseResult = ToolResult<BrowseToolData, BrowseJsonData>;
+
 const twitterEmbedData: { [key: string]: string } = {};
 
 function isTwitterUrl(url: string): boolean {
@@ -76,7 +88,7 @@ const toolDefinition = {
 const browse = async (
   context: ToolContext,
   args: Record<string, any>,
-): Promise<ToolResult<BrowseToolData>> => {
+): Promise<BrowseResult> => {
   const url = args.url as string;
 
   // Handle Twitter embeds

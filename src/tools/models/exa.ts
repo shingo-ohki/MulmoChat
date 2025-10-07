@@ -4,6 +4,24 @@ import ExaPreview from "../previews/exa.vue";
 
 const toolName = "exaSearch";
 
+export interface ExaSearchResult {
+  id: string;
+  url: string;
+  title: string;
+  score: number;
+  publishedDate?: string;
+  author?: string;
+  highlights?: string[];
+  text?: string;
+}
+
+export interface ExaJsonData {
+  query: string;
+  results: ExaSearchResult[];
+}
+
+export type ExaResult = ToolResult<never, ExaJsonData>;
+
 const toolDefinition = {
   type: "function" as const,
   name: toolName,
@@ -60,7 +78,7 @@ const toolDefinition = {
 const exaSearch = async (
   context: ToolContext,
   args: Record<string, any>,
-): Promise<ToolResult> => {
+): Promise<ExaResult> => {
   const query = args.query as string;
   const numResults = (args.numResults as number) || 5;
   const includeText = args.includeText !== false;

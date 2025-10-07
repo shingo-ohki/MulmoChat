@@ -1,9 +1,11 @@
 import { ToolPlugin, ToolContext, ToolResult } from "../types";
-import { playGo, Command, Side } from "../logic/goLogic";
+import { playGo, Command, Side, GoState } from "../logic/goLogic";
 import GoView from "../views/go.vue";
 import GoPreview from "../previews/go.vue";
 
 const toolName = "playGo";
+
+export type GoResult = ToolResult<never, GoState>;
 
 const toolDefinition = {
   type: "function" as const,
@@ -105,7 +107,7 @@ const toolDefinition = {
 const go = async (
   context: ToolContext,
   args: Record<string, any>,
-): Promise<ToolResult> => {
+): Promise<GoResult> => {
   try {
     let command: Command;
 

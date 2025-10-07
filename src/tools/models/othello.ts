@@ -1,9 +1,11 @@
 import { ToolPlugin, ToolContext, ToolResult } from "../types";
-import { playOthello, Command, Side } from "../logic/othelloLogic";
+import { playOthello, Command, Side, OthelloState } from "../logic/othelloLogic";
 import OthelloView from "../views/othello.vue";
 import OthelloPreview from "../previews/othello.vue";
 
 const toolName = "playOthello";
+
+export type OthelloResult = ToolResult<never, OthelloState>;
 
 const toolDefinition = {
   type: "function" as const,
@@ -82,7 +84,7 @@ const toolDefinition = {
 const othello = async (
   context: ToolContext,
   args: Record<string, any>,
-): Promise<ToolResult> => {
+): Promise<OthelloResult> => {
   try {
     let command: Command;
 
