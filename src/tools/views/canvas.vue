@@ -190,10 +190,10 @@ const saveDrawingState = async () => {
         canvasHeight: canvasHeight.value,
       };
 
-      const updatedResult = {
+      const updatedResult: ToolResult<ImageToolData> = {
         ...props.selectedResult,
         data: {
-          ...props.selectedResult.data,
+          prompt: props.selectedResult.data?.prompt || "",
           imageData: imageData,
         },
         viewState: {
