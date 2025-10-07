@@ -4,7 +4,15 @@ import HtmlPreview from "../previews/html.vue";
 
 const toolName = "renderHtml";
 
-export type HtmlLibraryType = "tailwind" | "d3.js" | "three.js";
+export const HTML_LIBRARIES = [
+  "tailwind",
+  "d3.js",
+  "three.js",
+  "chart.js",
+  "p5.js",
+  "mermaid",
+] as const;
+export type HtmlLibraryType = (typeof HTML_LIBRARIES)[number];
 
 export interface HtmlToolData {
   html: string;
@@ -15,7 +23,7 @@ const toolDefinition = {
   type: "function" as const,
   name: toolName,
   description:
-    "Render a full HTML page with specified library support (Tailwind CSS, D3.js, or Three.js). The HTML will be rendered in an isolated iframe.",
+    "Render a full HTML page with specified library support (Tailwind CSS, D3.js, Three.js, Chart.js, p5.js, or Mermaid). The HTML will be rendered in an isolated iframe.",
   parameters: {
     type: "object" as const,
     properties: {
@@ -30,9 +38,9 @@ const toolDefinition = {
       },
       type: {
         type: "string",
-        enum: ["tailwind", "d3.js", "three.js"],
+        enum: HTML_LIBRARIES,
         description:
-          "The primary library used in this HTML page. Valid values: 'tailwind' for Tailwind CSS, 'd3.js' for D3.js visualizations, 'three.js' for Three.js 3D graphics.",
+          "The primary library used in this HTML page. Valid values: 'tailwind' for Tailwind CSS, 'd3.js' for D3.js visualizations, 'three.js' for Three.js 3D graphics, 'chart.js' for Chart.js charts, 'p5.js' for p5.js creative coding, 'mermaid' for Mermaid diagrams.",
       },
     },
     required: ["title", "html", "type"],
@@ -48,9 +56,9 @@ const renderHtml = async (
   const title = args.title as string;
 
   // Validate type
-  if (!["tailwind", "d3.js", "three.js"].includes(type)) {
+  if (!HTML_LIBRARIES.includes(type as any)) {
     throw new Error(
-      `Invalid library type: ${type}. Must be one of: tailwind, d3.js, three.js`,
+      `Invalid library type: ${type}. Must be one of: ${HTML_LIBRARIES.join(", ")}`,
     );
   }
 
