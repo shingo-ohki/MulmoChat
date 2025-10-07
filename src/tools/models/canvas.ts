@@ -20,9 +20,6 @@ const openCanvas = async (
     instructions:
       "Tell the user that you are able to turn the drawing into a photographic image, a manga or any other art style.",
     title: "Drawing Canvas",
-    jsonData: {
-      drawingState: null,
-    },
   };
 };
 
