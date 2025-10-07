@@ -46,7 +46,12 @@ const toolDefinition = {
       type: {
         type: "string",
         enum: HTML_LIBRARIES,
-        description: `The primary library used in this HTML page. Valid values: ${HTML_LIBRARIES.map((lib) => `'${lib}' for ${LIBRARY_DESCRIPTIONS[lib]}`).join(", ")}.`,
+        description: (() => {
+          const validValues = HTML_LIBRARIES.map(
+            (lib) => `'${lib}' for ${LIBRARY_DESCRIPTIONS[lib]}`,
+          ).join(", ");
+          return `The primary library used in this HTML page. Valid values: ${validValues}.`;
+        })(),
       },
     },
     required: ["title", "html", "type"],
