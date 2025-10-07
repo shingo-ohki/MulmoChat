@@ -14,9 +14,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { ToolResult } from "../types";
+import type { MarkdownToolData } from "../models/markdown";
 
 const props = defineProps<{
-  result: ToolResult;
+  result: ToolResult<MarkdownToolData>;
 }>();
 
 const displayTitle = computed(() => {

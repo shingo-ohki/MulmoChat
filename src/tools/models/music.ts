@@ -4,6 +4,10 @@ import MusicPreview from "../previews/music.vue";
 
 const toolName = "pushMusic";
 
+export interface MusicToolData {
+  musicXML: string;
+}
+
 const toolDefinition = {
   type: "function" as const,
   name: toolName,
@@ -27,7 +31,7 @@ const toolDefinition = {
 const pushMusic = async (
   context: ToolContext,
   args: Record<string, any>,
-): Promise<ToolResult> => {
+): Promise<ToolResult<MusicToolData>> => {
   try {
     const { musicXML, title } = args;
 

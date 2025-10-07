@@ -21,10 +21,11 @@
 
 <script setup lang="ts">
 import type { ToolResult } from "../types";
+import type { MulmocastToolData } from "../models/mulmocast";
 import { computed } from "vue";
 
 const props = defineProps<{
-  result: ToolResult;
+  result: ToolResult<MulmocastToolData>;
 }>();
 
 const firstBeatImage = computed(() => {

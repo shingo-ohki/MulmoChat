@@ -5,6 +5,10 @@ import { loadBlankImageBase64 } from "./mulmocast";
 
 const toolName = "pushMarkdown";
 
+export interface MarkdownToolData {
+  markdown: string;
+}
+
 const toolDefinition = {
   type: "function" as const,
   name: toolName,
@@ -29,7 +33,7 @@ const toolDefinition = {
 const pushMarkdown = async (
   context: ToolContext,
   args: Record<string, any>,
-): Promise<ToolResult> => {
+): Promise<ToolResult<MarkdownToolData>> => {
   let markdown = args.markdown as string;
   const title = args.title as string;
   let docUuid: string | undefined;

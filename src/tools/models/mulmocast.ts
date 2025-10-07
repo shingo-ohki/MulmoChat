@@ -7,6 +7,12 @@ import { v4 as uuidv4 } from "uuid";
 const toolName = "pushMulmoScript";
 const dryRun = false;
 
+export interface MulmocastToolData {
+  mulmoScript: MulmoScript;
+  images: Record<string, string>;
+  moviePath?: string;
+}
+
 // Convert URL to base64 (without data URL prefix)
 async function urlToBase64(url: string): Promise<string> {
   const response = await fetch(url);
@@ -72,7 +78,7 @@ const toolDefinition = {
 const mulmocast = async (
   context: ToolContext,
   args: Record<string, any>,
-): Promise<ToolResult> => {
+): Promise<ToolResult<MulmocastToolData>> => {
   console.log("MULMOSCRIPT:\n", JSON.stringify(args, null, 2));
 
   const { title, beats, style: styleParam } = args;

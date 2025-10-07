@@ -9,8 +9,9 @@
 
 <script setup lang="ts">
 import type { ToolResult } from "../types";
+import type { MusicToolData } from "../models/music";
 
 defineProps<{
-  result: ToolResult;
+  result: ToolResult<MusicToolData>;
 }>();
 </script>

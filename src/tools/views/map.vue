@@ -11,10 +11,11 @@
 
 <script setup lang="ts">
 import type { ToolResult } from "../types";
+import type { MapToolData } from "../models/map";
 import GoogleMap from "../../components/GoogleMap.vue";
 
 const props = defineProps<{
-  selectedResult: ToolResult | null;
+  selectedResult: ToolResult<MapToolData> | null;
   googleMapKey: string | null;
   sendTextMessage?: (text: string) => void;
 }>();

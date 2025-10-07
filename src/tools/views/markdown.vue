@@ -92,9 +92,10 @@
 import { computed, ref, watch } from "vue";
 import { marked } from "marked";
 import type { ToolResult } from "../types";
+import type { MarkdownToolData } from "../models/markdown";
 
 const props = defineProps<{
-  selectedResult: ToolResult;
+  selectedResult: ToolResult<MarkdownToolData>;
 }>();
 
 const emit = defineEmits<{

@@ -4,6 +4,11 @@ import BrowsePreview from "../previews/browse.vue";
 
 const toolName = "browse";
 
+export interface BrowseToolData {
+  url: string;
+  twitterEmbedHtml?: string | null;
+}
+
 const twitterEmbedData: { [key: string]: string } = {};
 
 function isTwitterUrl(url: string): boolean {
@@ -71,7 +76,7 @@ const toolDefinition = {
 const browse = async (
   context: ToolContext,
   args: Record<string, any>,
-): Promise<ToolResult> => {
+): Promise<ToolResult<BrowseToolData>> => {
   const url = args.url as string;
 
   // Handle Twitter embeds

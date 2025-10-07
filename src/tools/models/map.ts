@@ -4,6 +4,10 @@ import MapPreview from "../previews/map.vue";
 
 const toolName = "presentMap";
 
+export interface MapToolData {
+  location: string | { lat: number; lng: number };
+}
+
 export const plugin: ToolPlugin = {
   toolDefinition: {
     type: "function",
@@ -25,7 +29,7 @@ export const plugin: ToolPlugin = {
   execute: async (
     context: ToolContext,
     args: Record<string, any>,
-  ): Promise<ToolResult> => {
+  ): Promise<ToolResult<MapToolData>> => {
     const { location } = args;
 
     if (!location || typeof location !== "string") {

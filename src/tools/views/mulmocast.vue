@@ -104,9 +104,10 @@
 import { ref, computed, onUnmounted, watch } from "vue";
 import { v4 as uuidv4 } from "uuid";
 import type { ToolResult } from "../types";
+import type { MulmocastToolData } from "../models/mulmocast";
 
 const props = defineProps<{
-  selectedResult: ToolResult | null;
+  selectedResult: ToolResult<MulmocastToolData> | null;
   setMute?: (muted: boolean) => void;
 }>();
 

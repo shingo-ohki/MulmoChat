@@ -9,8 +9,9 @@
 
 <script setup lang="ts">
 import type { ToolResult } from "../types";
+import type { BrowseToolData } from "../models/browse";
 
 defineProps<{
-  result: ToolResult;
+  result: ToolResult<BrowseToolData>;
 }>();
 </script>

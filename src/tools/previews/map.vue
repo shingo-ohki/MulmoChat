@@ -13,8 +13,9 @@
 
 <script setup lang="ts">
 import type { ToolResult } from "../types";
+import type { MapToolData } from "../models/map";
 
 defineProps<{
-  result: ToolResult;
+  result: ToolResult<MapToolData>;
 }>();
 </script>
