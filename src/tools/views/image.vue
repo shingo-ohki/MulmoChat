@@ -23,8 +23,9 @@
 
 <script setup lang="ts">
 import type { ToolResult } from "../types";
+import type { ImageToolData } from "../models/generateImage";
 
 defineProps<{
-  selectedResult: ToolResult;
+  selectedResult: ToolResult<ImageToolData>;
 }>();
 </script>

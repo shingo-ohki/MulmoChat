@@ -9,8 +9,9 @@
 
 <script setup lang="ts">
 import type { ToolResult } from "../types";
+import type { ImageToolData } from "../models/generateImage";
 
 defineProps<{
-  result: ToolResult;
+  result: ToolResult<ImageToolData>;
 }>();
 </script>

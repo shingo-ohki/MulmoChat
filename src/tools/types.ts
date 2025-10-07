@@ -1,10 +1,10 @@
 import type { StartApiResponse } from "../../server/types";
 
 export interface ToolContext {
-  currentResult: ToolResult | null;
+  currentResult: ToolResult<any> | null;
 }
 
-export interface ToolResult {
+export interface ToolResult<T = Record<string, any>> {
   toolName?: string; // name of the tool that generated this result
   uuid?: string; // unique identifier for this result
   message: string; // status message sent back to the LLM about the tool execution result
@@ -14,16 +14,16 @@ export interface ToolResult {
   instructionsRequired?: boolean; // if true, instructions will be sent even if suppressInstructions is enabled
   updating?: boolean; // if true, updates existing result instead of creating new one
 
-  data?: Record<string, any>; // tool specific data
+  data?: T; // tool specific data
   viewState?: Record<string, any>; // tool specific view state
 }
 
-export interface ToolResultComplete extends ToolResult {
+export interface ToolResultComplete<T = Record<string, any>> extends ToolResult<T> {
   toolName: string;
   uuid: string;
 }
 
-export interface ToolPlugin {
+export interface ToolPlugin<T = Record<string, any>> {
   toolDefinition: {
     type: "function";
     name: string;
@@ -39,7 +39,7 @@ export interface ToolPlugin {
   execute: (
     context: ToolContext,
     args: Record<string, any>,
-  ) => Promise<ToolResult>;
+  ) => Promise<ToolResult<T>>;
   generatingMessage: string;
   waitingMessage?: string;
   isEnabled: (startResponse?: StartApiResponse) => boolean;

@@ -4,6 +4,11 @@ import ImagePreview from "../previews/image.vue";
 
 const toolName = "generateImage";
 
+export interface ImageToolData {
+  imageData: string;
+  prompt: string;
+}
+
 const toolDefinition = {
   type: "function" as const,
   name: toolName,
@@ -24,7 +29,7 @@ export async function generateImageCommon(
   context: ToolContext,
   prompt: string,
   editImage: boolean,
-): Promise<ToolResult> {
+): Promise<ToolResult<ImageToolData>> {
   try {
     const response = await fetch("/api/generate-image", {
       method: "POST",
@@ -80,7 +85,7 @@ export async function generateImageCommon(
 const generateImage = async (
   context: ToolContext,
   args: Record<string, any>,
-): Promise<ToolResult> => {
+): Promise<ToolResult<ImageToolData>> => {
   const prompt = args.prompt as string;
   return generateImageCommon(context, prompt, false);
 };
@@ -89,7 +94,7 @@ export function createUploadedImageResult(
   imageData: string,
   fileName: string,
   prompt: string,
-): ToolResult {
+): ToolResult<ImageToolData> {
   return {
     toolName,
     data: { imageData, prompt },
@@ -98,7 +103,7 @@ export function createUploadedImageResult(
   };
 }
 
-export const plugin: ToolPlugin = {
+export const plugin: ToolPlugin<ImageToolData> = {
   toolDefinition,
   execute: generateImage,
   generatingMessage: "Generating image...",

@@ -1,5 +1,5 @@
 import { ToolPlugin, ToolContext, ToolResult } from "../types";
-import { generateImageCommon } from "./generateImage";
+import { generateImageCommon, ImageToolData } from "./generateImage";
 import ImageView from "../views/image.vue";
 import ImagePreview from "../previews/image.vue";
 
@@ -25,12 +25,12 @@ const toolDefinition = {
 const editImage = async (
   context: ToolContext,
   args: Record<string, any>,
-): Promise<ToolResult> => {
+): Promise<ToolResult<ImageToolData>> => {
   const prompt = args.prompt as string;
   return generateImageCommon(context, prompt, true);
 };
 
-export const plugin: ToolPlugin = {
+export const plugin: ToolPlugin<ImageToolData> = {
   toolDefinition,
   execute: editImage,
   generatingMessage: "Editing image...",
