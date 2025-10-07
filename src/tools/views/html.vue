@@ -58,12 +58,8 @@ const iframeRef = ref<HTMLIFrameElement | null>(null);
 
 // Library CDN URLs
 const libraryUrls: Record<HtmlLibraryType, string[]> = {
-  tailwind: [
-    '<script src="https://cdn.tailwindcss.com"><\/script>',
-  ],
-  "d3.js": [
-    '<script src="https://d3js.org/d3.v7.min.js"><\/script>',
-  ],
+  tailwind: ['<script src="https://cdn.tailwindcss.com"><\/script>'],
+  "d3.js": ['<script src="https://d3js.org/d3.v7.min.js"><\/script>'],
   "three.js": [
     '<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}<\/script>',
   ],

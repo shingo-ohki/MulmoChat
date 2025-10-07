@@ -24,6 +24,7 @@
         :user-language="userLanguage"
         :suppress-instructions="suppressInstructions"
         :system-prompt-id="systemPromptId"
+        :is-conversation-active="conversationActive"
         @start-chat="startChat"
         @stop-chat="stopChat"
         @set-mute="setMute"
@@ -323,11 +324,9 @@ function messageHandler(event: MessageEvent): void {
       break;
     }
     case "response.created":
-      console.log("MSG: Response created");
       conversationActive.value = true;
       break;
     case "response.done":
-      console.log("MSG: Response done");
       conversationActive.value = false;
       break;
     case "input_audio_buffer.speech_started":

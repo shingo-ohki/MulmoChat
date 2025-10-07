@@ -14,6 +14,13 @@
           {{ connecting ? "Connecting..." : "Connect" }}
         </button>
         <div v-else class="flex gap-2 w-full">
+          <div class="flex items-center justify-center px-2">
+            <span
+              class="material-icons text-2xl text-blue-600 transition-transform"
+              :class="{ 'animate-spin': isConversationActive }"
+              >star</span
+            >
+          </div>
           <button
             @click="$emit('stopChat')"
             class="flex-1 px-4 py-2 bg-red-600 text-white rounded"
@@ -242,6 +249,7 @@ defineProps<{
   userLanguage: string;
   suppressInstructions: boolean;
   systemPromptId: string;
+  isConversationActive: boolean;
 }>();
 
 const emit = defineEmits<{
