@@ -8,11 +8,18 @@ export const HTML_LIBRARIES = [
   "tailwind",
   "d3.js",
   "three.js",
-  "chart.js",
   "p5.js",
   "mermaid",
 ] as const;
 export type HtmlLibraryType = (typeof HTML_LIBRARIES)[number];
+
+const LIBRARY_DESCRIPTIONS: Record<HtmlLibraryType, string> = {
+  "tailwind": "Tailwind CSS for utility-first styling",
+  "d3.js": "D3.js for data-driven visualizations and interactive charts",
+  "three.js": "Three.js for 3D graphics and WebGL rendering",
+  "p5.js": "p5.js for creative coding, animations, and generative art",
+  "mermaid": "Mermaid for diagrams and flowcharts from text definitions",
+};
 
 export interface HtmlToolData {
   html: string;
@@ -40,7 +47,7 @@ const toolDefinition = {
         type: "string",
         enum: HTML_LIBRARIES,
         description:
-          "The primary library used in this HTML page. Valid values: 'tailwind' for Tailwind CSS, 'd3.js' for D3.js visualizations, 'three.js' for Three.js 3D graphics, 'chart.js' for Chart.js charts, 'p5.js' for p5.js creative coding, 'mermaid' for Mermaid diagrams.",
+          `The primary library used in this HTML page. Valid values: ${HTML_LIBRARIES.map(lib => `'${lib}' for ${LIBRARY_DESCRIPTIONS[lib]}`).join(", ")}.`,
       },
     },
     required: ["title", "html", "type"],
