@@ -26,7 +26,7 @@ const toolDefinition = {
       html: {
         type: "string",
         description:
-          "The complete HTML content to render. Should be a full HTML document including DOCTYPE, html, head, and body tags. Do not include library script/link tags - they will be injected automatically based on the type parameter.",
+          "The complete HTML content to render. Should be a full HTML document including DOCTYPE, html, head, and body tags.",
       },
       type: {
         type: "string",
