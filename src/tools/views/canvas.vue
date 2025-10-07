@@ -117,8 +117,8 @@ const canvasHeight = ref(600);
 const canvasRenderKey = ref(0);
 
 const restoreDrawingState = () => {
-  if (props.selectedResult?.jsonData?.drawingState) {
-    const state = props.selectedResult.jsonData.drawingState;
+  if (props.selectedResult?.viewState?.drawingState) {
+    const state = props.selectedResult.viewState.drawingState;
 
     brushSize.value = state.brushSize || 5;
     brushColor.value = state.brushColor || "#000000";
@@ -196,8 +196,7 @@ const saveDrawingState = async () => {
           ...props.selectedResult.data,
           imageData: imageData,
         },
-        jsonData: {
-          ...props.selectedResult.jsonData,
+        viewState: {
           drawingState,
         },
       };
