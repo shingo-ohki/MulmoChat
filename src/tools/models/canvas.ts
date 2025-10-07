@@ -1,6 +1,7 @@
 import { ToolPlugin, ToolContext, ToolResult } from "../types";
 import CanvasView from "../views/canvas.vue";
 import ImagePreview from "../previews/image.vue";
+import type { ImageToolData } from "./generateImage";
 
 const toolName = "openCanvas";
 
@@ -11,7 +12,9 @@ const toolDefinition = {
     "Open a drawing canvas for the user to create drawings, sketches, or diagrams.",
 };
 
-const openCanvas = async (__: ToolContext): Promise<ToolResult> => {
+const openCanvas = async (
+  __: ToolContext,
+): Promise<ToolResult<ImageToolData>> => {
   return {
     message: "Drawing canvas opened",
     instructions:

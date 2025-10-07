@@ -18,7 +18,8 @@ export interface ToolResult<T = Record<string, any>> {
   viewState?: Record<string, any>; // tool specific view state
 }
 
-export interface ToolResultComplete<T = Record<string, any>> extends ToolResult<T> {
+export interface ToolResultComplete<T = Record<string, any>>
+  extends ToolResult<T> {
   toolName: string;
   uuid: string;
 }

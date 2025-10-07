@@ -97,13 +97,14 @@
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from "vue";
 import VueDrawingCanvas from "vue-drawing-canvas";
 import type { ToolResult } from "../types";
+import type { ImageToolData } from "../models/generateImage";
 
 const props = defineProps<{
-  selectedResult: ToolResult | null;
+  selectedResult: ToolResult<ImageToolData> | null;
 }>();
 
 const emit = defineEmits<{
-  updateResult: [result: ToolResult];
+  updateResult: [result: ToolResult<ImageToolData>];
 }>();
 
 const canvasRef = ref<any>(null);
