@@ -2,8 +2,8 @@
   <div class="w-full h-full flex flex-col p-4">
     <div class="flex-1 w-full min-h-0">
       <iframe
-        v-if="selectedResult.data?.pdfData"
-        :src="selectedResult.data.pdfData"
+        v-if="pdfUrl"
+        :src="pdfUrl"
         class="w-full h-full border-0 rounded"
         title="PDF Viewer"
       />
@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { marked } from "marked";
 import type { ToolResult } from "../types";
 import type { PdfToolData } from "../models/pdf";
@@ -40,9 +40,45 @@ const props = defineProps<{
   selectedResult: ToolResult<PdfToolData>;
 }>();
 
+const pdfUrl = ref<string>("");
+
 const renderedSummary = computed(() => {
   const summary = props.selectedResult.data?.summary;
   if (!summary) return "";
   return marked(summary);
+});
+
+onMounted(async () => {
+  const pdfData = props.selectedResult.data?.pdfData;
+  const fileName = props.selectedResult.data?.fileName;
+  const uuid = props.selectedResult.uuid;
+
+  if (!pdfData || !uuid) return;
+
+  try {
+    // Call API to save PDF to output folder
+    const response = await fetch("/api/save-pdf", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        pdfData,
+        uuid,
+        fileName: fileName || "document.pdf",
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to save PDF");
+    }
+
+    const data = await response.json();
+    pdfUrl.value = data.pdfUrl;
+  } catch (error) {
+    console.error("Failed to save PDF to output folder:", error);
+    // Fallback to data URI if saving fails
+    pdfUrl.value = pdfData;
+  }
 });
 </script>

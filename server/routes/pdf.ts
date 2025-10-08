@@ -302,6 +302,65 @@ ${htmlContent}
   },
 );
 
+// PDF save endpoint - saves PDF data to output folder
+router.post("/save-pdf", async (req: Request, res: Response): Promise<void> => {
+  const { pdfData, uuid, fileName } = req.body as {
+    pdfData: string;
+    uuid: string;
+    fileName: string;
+  };
+
+  if (!pdfData) {
+    res.status(400).json({ error: "PDF data is required" });
+    return;
+  }
+
+  if (!uuid) {
+    res.status(400).json({ error: "UUID is required" });
+    return;
+  }
+
+  try {
+    // Ensure output directory exists
+    const outputDir = path.join(process.cwd(), "output");
+    await fs.mkdir(outputDir, { recursive: true });
+
+    // Extract base64 data if it includes the data URL prefix
+    const base64Data = pdfData.includes(",") ? pdfData.split(",")[1] : pdfData;
+
+    // Convert base64 to buffer
+    const pdfBuffer = Buffer.from(base64Data, "base64");
+
+    // Create file path with UUID
+    const sanitizedFileName = (fileName || "document")
+      .replace(/\.pdf$/i, "")
+      .replace(/[^a-z0-9]/gi, "_")
+      .toLowerCase();
+    const pdfPath = path.join(outputDir, `${uuid}_${sanitizedFileName}.pdf`);
+
+    // Write the PDF file
+    await fs.writeFile(pdfPath, pdfBuffer);
+
+    console.log("PDF saved:", pdfPath);
+
+    // Return the URL path for the client to access
+    const pdfUrl = `/output/${uuid}_${sanitizedFileName}.pdf`;
+
+    res.json({
+      success: true,
+      pdfUrl,
+    });
+  } catch (error: unknown) {
+    console.error("PDF save failed:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    res.status(500).json({
+      error: "Failed to save PDF",
+      details: errorMessage,
+    });
+  }
+});
+
 // PDF download endpoint
 router.post(
   "/download-pdf",
