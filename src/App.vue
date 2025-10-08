@@ -35,6 +35,7 @@
         @update:suppress-instructions="suppressInstructions = $event"
         @update:system-prompt-id="systemPromptId = $event"
         @upload-images="handleUploadImages"
+        @upload-pdfs="handleUploadPdfs"
       />
 
       <!-- Main content -->
@@ -75,6 +76,7 @@ import {
   getToolPlugin,
 } from "./tools";
 import { createUploadedImageResult } from "./tools/models/generateImage";
+import { createUploadedPdfResult } from "./tools/models/pdf";
 import type { StartApiResponse } from "../server/types";
 import Sidebar from "./components/Sidebar.vue";
 import { DEFAULT_LANGUAGE_CODE, getLanguageName } from "./config/languages";
@@ -547,6 +549,28 @@ function handleUploadImages(
       fileName,
       `Uploaded by the user: ${fileName}`,
     );
+
+    // Add UUID to make it a complete ToolResult
+    const completeResult = {
+      ...result,
+      uuid: crypto.randomUUID(),
+    };
+
+    toolResults.value.push(completeResult);
+    selectedResult.value = completeResult;
+  });
+
+  scrollToBottomOfSideBar();
+  scrollCurrentResultToTop();
+}
+
+function handleUploadPdfs(
+  pdfDataArray: string[],
+  fileNamesArray: string[],
+): void {
+  pdfDataArray.forEach((pdfData, index) => {
+    const fileName = fileNamesArray[index];
+    const result = createUploadedPdfResult(pdfData, fileName);
 
     // Add UUID to make it a complete ToolResult
     const completeResult = {

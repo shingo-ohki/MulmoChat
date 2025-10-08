@@ -102,6 +102,13 @@
         >
           <span class="text-lg">+</span>
         </button>
+        <button
+          @click="triggerPdfUpload"
+          class="px-3 py-2 bg-gray-100 text-gray-600 border border-gray-300 rounded hover:bg-gray-200 flex items-center justify-center flex-shrink-0"
+          title="Upload PDF"
+        >
+          📄
+        </button>
         <input
           :value="userInput"
           @input="
@@ -121,6 +128,14 @@
         multiple
         class="hidden"
         @change="handleImageUpload"
+      />
+      <input
+        ref="pdfInput"
+        type="file"
+        accept="application/pdf"
+        multiple
+        class="hidden"
+        @change="handlePdfUpload"
       />
       <button
         @click="$emit('sendTextMessage')"
@@ -263,11 +278,13 @@ const emit = defineEmits<{
   "update:suppressInstructions": [value: boolean];
   "update:systemPromptId": [value: string];
   uploadImages: [imageData: string[], fileNames: string[]];
+  uploadPdfs: [pdfData: string[], fileNames: string[]];
 }>();
 
 const audioEl = ref<HTMLAudioElement | null>(null);
 const imageContainer = ref<HTMLDivElement | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
+const pdfInput = ref<HTMLInputElement | null>(null);
 const showConfigPopup = ref(false);
 
 function scrollToBottom(): void {
@@ -280,6 +297,10 @@ function scrollToBottom(): void {
 
 function triggerImageUpload(): void {
   fileInput.value?.click();
+}
+
+function triggerPdfUpload(): void {
+  pdfInput.value?.click();
 }
 
 function handleImageUpload(event: Event): void {
@@ -303,6 +324,37 @@ function handleImageUpload(event: Event): void {
 
         if (loadedCount === validFiles.length) {
           emit("uploadImages", imageDataArray, fileNamesArray);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Reset the input so the same files can be uploaded again
+    target.value = "";
+  }
+}
+
+function handlePdfUpload(event: Event): void {
+  const target = event.target as HTMLInputElement;
+  const files = target.files;
+  if (files && files.length > 0) {
+    const pdfDataArray: string[] = [];
+    const fileNamesArray: string[] = [];
+    let loadedCount = 0;
+    const validFiles = Array.from(files).filter(
+      (file) => file.type === "application/pdf",
+    );
+
+    validFiles.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const pdfData = e.target?.result as string;
+        pdfDataArray.push(pdfData);
+        fileNamesArray.push(file.name);
+        loadedCount++;
+
+        if (loadedCount === validFiles.length) {
+          emit("uploadPdfs", pdfDataArray, fileNamesArray);
         }
       };
       reader.readAsDataURL(file);
