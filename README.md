@@ -18,8 +18,9 @@ Create .env file with following API keys:
 ```
 OPENAI_API_KEY=...
 GEMINI_API_KEY=...
-GOOGLE_MAP_API_KEY=... (optional)
-EXA_API_KEY=... (optional)
+GOOGLE_MAP_API_KEY=... (optional, required for map features)
+EXA_API_KEY=... (optional, required for AI-powered search)
+ANTHROPIC_API_KEY=... (optional, required for HTML generation)
 ```
 
 Start a development server:

@@ -4,4 +4,5 @@ export interface StartApiResponse {
   ephemeralKey: string;
   googleMapKey: string | undefined;
   hasExaApiKey: boolean;
+  hasAnthropicApiKey: boolean;
 }

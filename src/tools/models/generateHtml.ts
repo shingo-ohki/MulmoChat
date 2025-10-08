@@ -66,6 +66,7 @@ const generateHtml = async (
     console.error("ERR: exception\n HTML generation failed", error);
     return {
       message: "HTML generation failed",
+      jsonData: error,
       instructions: "Acknowledge that the HTML generation failed.",
     };
   }
@@ -75,7 +76,7 @@ export const plugin: ToolPlugin<HtmlToolData> = {
   toolDefinition,
   execute: generateHtml,
   generatingMessage: "Generating HTML...",
-  isEnabled: () => true,
+  isEnabled: (startResponse) => !!startResponse?.hasAnthropicApiKey,
   viewComponent: HtmlView,
   previewComponent: HtmlPreview,
 };

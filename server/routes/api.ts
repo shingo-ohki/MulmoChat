@@ -24,6 +24,8 @@ router.use(htmlRouter);
 router.get("/start", async (req: Request, res: Response): Promise<void> => {
   const openaiKey = process.env.OPENAI_API_KEY;
   const googleMapKey = process.env.GOOGLE_MAP_API_KEY;
+  const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
+  const hasAnthropicApiKey = !!anthropicApiKey;
 
   if (!openaiKey) {
     res
@@ -66,6 +68,7 @@ router.get("/start", async (req: Request, res: Response): Promise<void> => {
       ephemeralKey: data.value,
       googleMapKey,
       hasExaApiKey,
+      hasAnthropicApiKey,
     };
     res.json(responseData);
   } catch (error: unknown) {

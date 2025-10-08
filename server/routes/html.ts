@@ -71,11 +71,10 @@ Return ONLY the HTML code, nothing else. Do not include markdown code blocks or 
       }
     } catch (error: unknown) {
       console.error("HTML generation failed:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      //const errorMessage = error instanceof Error ? error.message : "Unknown error";
       res.status(500).json({
         error: "Failed to generate HTML",
-        details: errorMessage,
+        details: error,
       });
     }
   },
