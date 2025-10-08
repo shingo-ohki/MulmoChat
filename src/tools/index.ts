@@ -12,6 +12,7 @@ import * as QuizPlugin from "./models/quiz";
 import * as MusicPlugin from "./models/music";
 // import * as HtmlPlugin from "./models/html";
 import * as GenerateHtmlPlugin from "./models/generateHtml";
+import * as EditHtmlPlugin from "./models/editHtml";
 import type { StartApiResponse } from "../../server/types";
 import { v4 as uuidv4 } from "uuid";
 import type {
@@ -38,6 +39,7 @@ const pluginList = [
   MusicPlugin,
   // HtmlPlugin,
   GenerateHtmlPlugin,
+  EditHtmlPlugin,
 ];
 
 export const pluginTools = (startResponse?: StartApiResponse) => {
