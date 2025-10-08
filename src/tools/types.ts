@@ -24,6 +24,11 @@ export interface ToolResultComplete<T = Record<string, any>, J = any>
   uuid: string;
 }
 
+export interface FileUploadConfig {
+  acceptedTypes: string[]; // MIME types like "image/png", "application/pdf"
+  handleUpload: (fileData: string, fileName: string) => ToolResult<any, any>;
+}
+
 export interface ToolPlugin<T = Record<string, any>, J = any> {
   toolDefinition: {
     type: "function";
@@ -47,4 +52,5 @@ export interface ToolPlugin<T = Record<string, any>, J = any> {
   delayAfterExecution?: number;
   viewComponent?: any; // Vue component for rendering results
   previewComponent?: any; // Vue component for sidebar preview
+  fileUpload?: FileUploadConfig; // Optional file upload configuration
 }

@@ -110,4 +110,8 @@ export const plugin: ToolPlugin<PdfToolData> = {
   isEnabled: (startResponse) => !!startResponse?.hasAnthropicApiKey,
   viewComponent: PdfView,
   previewComponent: PdfPreview,
+  fileUpload: {
+    acceptedTypes: ["application/pdf"],
+    handleUpload: createUploadedPdfResult,
+  },
 };

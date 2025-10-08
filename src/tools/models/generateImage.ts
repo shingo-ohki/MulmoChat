@@ -110,4 +110,8 @@ export const plugin: ToolPlugin<ImageToolData> = {
   isEnabled: () => true,
   viewComponent: ImageView,
   previewComponent: ImagePreview,
+  fileUpload: {
+    acceptedTypes: ["image/png", "image/jpeg"],
+    handleUpload: createUploadedImageResult,
+  },
 };

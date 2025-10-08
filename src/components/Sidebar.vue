@@ -117,7 +117,7 @@
       <input
         ref="fileInput"
         type="file"
-        accept="image/png,image/jpeg,application/pdf"
+        :accept="acceptedFileTypes"
         multiple
         class="hidden"
         @change="handleFileUpload"
@@ -231,9 +231,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, defineProps, defineEmits } from "vue";
+import { ref, nextTick, defineProps, defineEmits, computed } from "vue";
 import type { ToolResult } from "../tools";
-import { getToolPlugin } from "../tools";
+import {
+  getToolPlugin,
+  getAcceptedFileTypes,
+  getFileUploadPlugins,
+} from "../tools";
 import { LANGUAGES } from "../config/languages";
 import { SYSTEM_PROMPTS } from "../config/systemPrompts";
 
@@ -262,14 +266,16 @@ const emit = defineEmits<{
   "update:userLanguage": [value: string];
   "update:suppressInstructions": [value: boolean];
   "update:systemPromptId": [value: string];
-  uploadImages: [imageData: string[], fileNames: string[]];
-  uploadPdfs: [pdfData: string[], fileNames: string[]];
+  uploadFiles: [results: ToolResult[]];
 }>();
 
 const audioEl = ref<HTMLAudioElement | null>(null);
 const imageContainer = ref<HTMLDivElement | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 const showConfigPopup = ref(false);
+
+const acceptedFileTypes = computed(() => getAcceptedFileTypes().join(","));
+const fileUploadPlugins = computed(() => getFileUploadPlugins());
 
 function scrollToBottom(): void {
   nextTick(() => {
@@ -286,66 +292,40 @@ function triggerFileUpload(): void {
 function handleFileUpload(event: Event): void {
   const target = event.target as HTMLInputElement;
   const files = target.files;
-  if (files && files.length > 0) {
-    const imageDataArray: string[] = [];
-    const imageFileNamesArray: string[] = [];
-    const pdfDataArray: string[] = [];
-    const pdfFileNamesArray: string[] = [];
-    let loadedCount = 0;
+  if (!files || files.length === 0) return;
 
-    const imageFiles = Array.from(files).filter(
-      (file) => file.type === "image/png" || file.type === "image/jpeg",
+  const results: ToolResult[] = [];
+  let loadedCount = 0;
+  const totalFiles = files.length;
+
+  Array.from(files).forEach((file) => {
+    // Find the plugin that handles this file type
+    const plugin = fileUploadPlugins.value.find((p) =>
+      p.fileUpload.acceptedTypes.includes(file.type),
     );
-    const pdfFiles = Array.from(files).filter(
-      (file) => file.type === "application/pdf",
-    );
-    const totalFiles = imageFiles.length + pdfFiles.length;
 
-    // Process image files
-    imageFiles.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const imageData = e.target?.result as string;
-        imageDataArray.push(imageData);
-        imageFileNamesArray.push(file.name);
-        loadedCount++;
+    if (!plugin) {
+      console.warn(`No plugin found for file type: ${file.type}`);
+      loadedCount++;
+      return;
+    }
 
-        if (loadedCount === totalFiles) {
-          if (imageDataArray.length > 0) {
-            emit("uploadImages", imageDataArray, imageFileNamesArray);
-          }
-          if (pdfDataArray.length > 0) {
-            emit("uploadPdfs", pdfDataArray, pdfFileNamesArray);
-          }
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const fileData = e.target?.result as string;
+      const result = plugin.fileUpload.handleUpload(fileData, file.name);
+      results.push(result);
+      loadedCount++;
 
-    // Process PDF files
-    pdfFiles.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const pdfData = e.target?.result as string;
-        pdfDataArray.push(pdfData);
-        pdfFileNamesArray.push(file.name);
-        loadedCount++;
+      if (loadedCount === totalFiles) {
+        emit("uploadFiles", results);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
 
-        if (loadedCount === totalFiles) {
-          if (imageDataArray.length > 0) {
-            emit("uploadImages", imageDataArray, imageFileNamesArray);
-          }
-          if (pdfDataArray.length > 0) {
-            emit("uploadPdfs", pdfDataArray, pdfFileNamesArray);
-          }
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-
-    // Reset the input so the same files can be uploaded again
-    target.value = "";
-  }
+  // Reset the input so the same files can be uploaded again
+  target.value = "";
 }
 
 defineExpose({

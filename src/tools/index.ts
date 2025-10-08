@@ -79,3 +79,20 @@ export const toolExecute = async (
 export const getToolPlugin = (name: string) => {
   return plugins[name] || null;
 };
+
+export const getFileUploadPlugins = () => {
+  return pluginList
+    .filter((plugin) => plugin.plugin.fileUpload)
+    .map((plugin) => ({
+      toolName: plugin.plugin.toolDefinition.name,
+      fileUpload: plugin.plugin.fileUpload!,
+    }));
+};
+
+export const getAcceptedFileTypes = () => {
+  const uploadPlugins = getFileUploadPlugins();
+  const allTypes = uploadPlugins.flatMap(
+    (plugin) => plugin.fileUpload.acceptedTypes,
+  );
+  return Array.from(new Set(allTypes));
+};
