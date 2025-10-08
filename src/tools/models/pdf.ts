@@ -13,7 +13,7 @@ export interface PdfToolData {
 const toolDefinition = {
   type: "function" as const,
   name: toolName,
-  description: "Summarize the content of a PDF file using Claude.",
+  description: "Summarize the content of a currently selected PDF file using Claude.",
   parameters: {
     type: "object" as const,
     properties: {
@@ -37,29 +37,51 @@ const summarizePDF = async (
 
   if (!currentPdfData?.pdfData) {
     return {
-      message: "No PDF file available to summarize",
-      instructions: "Acknowledge that no PDF file is available.",
+      message: "No PDF file available to summarize. Please select a PDF file first.",
+      instructions: "Tell the user that no PDF file is currently selected and they need to upload a PDF file first.",
     };
   }
 
   try {
-    // TODO: Call Claude API with the PDF and prompt
-    // For now, just return a placeholder
-    const summary = "Summary will be generated here";
+    // Call the server API to summarize the PDF
+    const response = await fetch("/api/summarize-pdf", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        prompt,
+        pdfData: currentPdfData.pdfData,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to summarize PDF");
+    }
+
+    const data = await response.json();
+    const summary = data.summary;
 
     return {
       data: {
         ...currentPdfData,
         summary,
       },
+      jsonData: {
+        fileName: currentPdfData.fileName,
+        summary,
+      },
       message: "PDF summarized successfully",
-      instructions: `The PDF has been summarized. Summary: ${summary}`,
+      instructions: `Give the user a brief summary of the PDF.`,
+      updating: true,
     };
   } catch (error) {
     console.error("PDF summarization failed", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return {
-      message: "PDF summarization failed",
-      instructions: "Acknowledge that the PDF summarization failed.",
+      message: `PDF summarization failed: ${errorMessage}`,
+      instructions: `Tell the user that the PDF summarization failed with error: ${errorMessage}`,
     };
   }
 };
@@ -80,7 +102,7 @@ export const plugin: ToolPlugin<PdfToolData> = {
   toolDefinition,
   execute: summarizePDF,
   generatingMessage: "Summarizing PDF...",
-  isEnabled: () => false, // Disabled for now
+  isEnabled: (startResponse) => !!startResponse?.hasAnthropicApiKey,
   viewComponent: PdfView,
   previewComponent: PdfPreview,
 };
