@@ -4,10 +4,100 @@ import { marked } from "marked";
 import path from "path";
 import fs from "fs/promises";
 import { createReadStream } from "fs";
+import Anthropic from "@anthropic-ai/sdk";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const router: Router = express.Router();
 
 const isCI = process.env.CI === "true";
+
+// PDF summarization endpoint using Claude
+router.post(
+  "/summarize-pdf",
+  async (req: Request, res: Response): Promise<void> => {
+    const { prompt, pdfData } = req.body as {
+      prompt: string;
+      pdfData: string;
+    };
+
+    if (!prompt) {
+      res.status(400).json({ error: "Prompt is required" });
+      return;
+    }
+
+    if (!pdfData) {
+      res.status(400).json({ error: "PDF data is required" });
+      return;
+    }
+
+    const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
+
+    if (!anthropicApiKey) {
+      res.status(500).json({
+        error: "ANTHROPIC_API_KEY environment variable not set",
+      });
+      return;
+    }
+
+    try {
+      const anthropic = new Anthropic({
+        apiKey: anthropicApiKey,
+      });
+
+      // Extract base64 data if it includes the data URL prefix
+      const base64Data = pdfData.includes(",")
+        ? pdfData.split(",")[1]
+        : pdfData;
+
+      const message = await anthropic.messages.create({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 4096,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "document",
+                source: {
+                  type: "base64",
+                  media_type: "application/pdf",
+                  data: base64Data,
+                },
+              },
+              {
+                type: "text",
+                text: prompt,
+              },
+            ],
+          },
+        ],
+      });
+
+      // Extract text content from response
+      const textContent = message.content
+        .filter((block) => block.type === "text")
+        .map((block) => ("text" in block ? block.text : ""))
+        .join("\n");
+
+      console.log("PDF summarization completed:", textContent.substring(0, 100));
+
+      res.json({
+        success: true,
+        summary: textContent,
+      });
+    } catch (error: unknown) {
+      console.error("PDF summarization failed:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({
+        error: "Failed to summarize PDF",
+        details: errorMessage,
+      });
+    }
+  },
+);
 
 // PDF generation endpoint
 router.post(
