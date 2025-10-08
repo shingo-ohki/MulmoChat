@@ -10,7 +10,8 @@ import * as CanvasPlugin from "./models/canvas";
 import * as MarkdownPlugin from "./models/markdown";
 import * as QuizPlugin from "./models/quiz";
 import * as MusicPlugin from "./models/music";
-import * as HtmlPlugin from "./models/html";
+// import * as HtmlPlugin from "./models/html";
+import * as GenerateHtmlPlugin from "./models/generateHtml";
 import type { StartApiResponse } from "../../server/types";
 import { v4 as uuidv4 } from "uuid";
 import type {
@@ -35,7 +36,8 @@ const pluginList = [
   MarkdownPlugin,
   QuizPlugin,
   MusicPlugin,
-  HtmlPlugin,
+  // HtmlPlugin,
+  GenerateHtmlPlugin,
 ];
 
 export const pluginTools = (startResponse?: StartApiResponse) => {
