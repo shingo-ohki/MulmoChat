@@ -4,9 +4,9 @@ import { GoogleGenAI } from "@google/genai";
 import { puppeteerCrawlerAgent } from "mulmocast";
 import { StartApiResponse } from "../types";
 import { exaSearch, hasExaApiKey } from "../exaSearch";
-import movieRouter from "./movie.js";
-import pdfRouter from "./pdf.js";
-import htmlRouter from "./html.js";
+import movieRouter from "./movie";
+import pdfRouter from "./pdf";
+import htmlRouter from "./html";
 dotenv.config();
 
 const router: Router = express.Router();
