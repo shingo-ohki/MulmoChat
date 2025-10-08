@@ -1,5 +1,7 @@
 <template>
-  <div class="w-full h-32 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
+  <div
+    class="w-full h-32 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center"
+  >
     <div class="text-center">
       <svg
         class="w-12 h-12 mx-auto text-red-500"

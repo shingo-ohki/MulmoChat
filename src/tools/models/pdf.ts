@@ -13,13 +13,15 @@ export interface PdfToolData {
 const toolDefinition = {
   type: "function" as const,
   name: toolName,
-  description: "Summarize the content of a currently selected PDF file using Claude.",
+  description:
+    "Summarize the content of a currently selected PDF file using Claude.",
   parameters: {
     type: "object" as const,
     properties: {
       prompt: {
         type: "string",
-        description: "Instructions for Claude on how to summarize or analyze the PDF",
+        description:
+          "Instructions for Claude on how to summarize or analyze the PDF",
       },
     },
     required: ["prompt"],
@@ -37,8 +39,10 @@ const summarizePDF = async (
 
   if (!currentPdfData?.pdfData) {
     return {
-      message: "No PDF file available to summarize. Please select a PDF file first.",
-      instructions: "Tell the user that no PDF file is currently selected and they need to upload a PDF file first.",
+      message:
+        "No PDF file available to summarize. Please select a PDF file first.",
+      instructions:
+        "Tell the user that no PDF file is currently selected and they need to upload a PDF file first.",
     };
   }
 
@@ -78,7 +82,8 @@ const summarizePDF = async (
     };
   } catch (error) {
     console.error("PDF summarization failed", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     return {
       message: `PDF summarization failed: ${errorMessage}`,
       instructions: `Tell the user that the PDF summarization failed with error: ${errorMessage}`,

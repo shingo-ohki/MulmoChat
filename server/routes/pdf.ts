@@ -81,7 +81,10 @@ router.post(
         .map((block) => ("text" in block ? block.text : ""))
         .join("\n");
 
-      console.log("PDF summarization completed:", textContent.substring(0, 100));
+      console.log(
+        "PDF summarization completed:",
+        textContent.substring(0, 100),
+      );
 
       res.json({
         success: true,
