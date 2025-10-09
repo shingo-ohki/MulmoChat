@@ -535,8 +535,8 @@ function handleUpdateResult(updatedResult: ToolResult): void {
   }
 }
 
-function handleUploadFiles(results: ToolResult[]): void {
-  results.forEach((result) => {
+async function handleUploadFiles(results: ToolResult[]): Promise<void> {
+  for (const result of results) {
     // Add UUID to make it a complete ToolResult
     const completeResult = {
       ...result,
@@ -549,6 +549,11 @@ function handleUploadFiles(results: ToolResult[]): void {
     // Send uploadMessage to LLM if available
     const plugin = getToolPlugin(result.toolName);
     if (plugin?.uploadMessage && webrtc.dc?.readyState === "open") {
+      // Wait for conversation to be active (up to 5 seconds)
+      for (let i = 0; i < 5 && conversationActive.value; i++) {
+        console.log(`WAIT:${i} \n`, plugin.uploadMessage);
+        await sleep(1000);
+      }
       console.log(`UPL:${result.toolName}\n${plugin.uploadMessage}`);
       webrtc.dc.send(
         JSON.stringify({
@@ -559,7 +564,7 @@ function handleUploadFiles(results: ToolResult[]): void {
         }),
       );
     }
-  });
+  }
 
   scrollToBottomOfSideBar();
   scrollCurrentResultToTop();
