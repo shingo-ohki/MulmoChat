@@ -48,6 +48,7 @@ export interface ToolPlugin<T = Record<string, any>, J = any> {
   ) => Promise<ToolResult<T, J>>;
   generatingMessage: string;
   waitingMessage?: string;
+  uploadMessage?: string;
   isEnabled: (startResponse?: StartApiResponse) => boolean;
   delayAfterExecution?: number;
   viewComponent?: any; // Vue component for rendering results

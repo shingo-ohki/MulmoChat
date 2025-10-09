@@ -545,6 +545,20 @@ function handleUploadFiles(results: ToolResult[]): void {
 
     toolResults.value.push(completeResult);
     selectedResult.value = completeResult;
+
+    // Send uploadMessage to LLM if available
+    const plugin = getToolPlugin(result.toolName);
+    if (plugin?.uploadMessage && webrtc.dc?.readyState === "open") {
+      console.log(`UPL:${result.toolName}\n${plugin.uploadMessage}`);
+      webrtc.dc.send(
+        JSON.stringify({
+          type: "response.create",
+          response: {
+            instructions: plugin.uploadMessage,
+          },
+        }),
+      );
+    }
   });
 
   scrollToBottomOfSideBar();

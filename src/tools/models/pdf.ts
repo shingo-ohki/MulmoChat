@@ -78,6 +78,7 @@ const summarizePDF = async (
       },
       message: "PDF summarized successfully",
       instructions: `Give the user a brief summary of the PDF.`,
+      instructionsRequired: true,
       updating: true,
     };
   } catch (error) {
@@ -107,6 +108,8 @@ export const plugin: ToolPlugin<PdfToolData> = {
   toolDefinition,
   execute: summarizePDF,
   generatingMessage: "Summarizing PDF...",
+  uploadMessage:
+    "PDF file is available. Call 'summarizePDF' to see its summary",
   isEnabled: (startResponse) => !!startResponse?.hasAnthropicApiKey,
   viewComponent: PdfView,
   previewComponent: PdfPreview,
