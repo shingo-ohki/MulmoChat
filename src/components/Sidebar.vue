@@ -216,6 +216,37 @@
             </label>
           </div>
 
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Enabled Plugins
+            </label>
+            <div class="max-h-60 overflow-y-auto border rounded p-2 space-y-1">
+              <label
+                v-for="pluginModule in getPluginList()"
+                :key="pluginModule.plugin.toolDefinition.name"
+                class="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded"
+              >
+                <input
+                  type="checkbox"
+                  :checked="
+                    enabledPlugins[pluginModule.plugin.toolDefinition.name] ??
+                    true
+                  "
+                  @change="
+                    handlePluginToggle(
+                      pluginModule.plugin.toolDefinition.name,
+                      ($event.target as HTMLInputElement).checked,
+                    )
+                  "
+                  class="rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                />
+                <span class="text-sm text-gray-700">
+                  {{ pluginModule.plugin.toolDefinition.name }}
+                </span>
+              </label>
+            </div>
+          </div>
+
           <div class="flex justify-end">
             <button
               @click="showConfigPopup = false"
@@ -237,11 +268,12 @@ import {
   getToolPlugin,
   getAcceptedFileTypes,
   getFileUploadPlugins,
+  getPluginList,
 } from "../tools";
 import { LANGUAGES } from "../config/languages";
 import { SYSTEM_PROMPTS } from "../config/systemPrompts";
 
-defineProps<{
+const props = defineProps<{
   chatActive: boolean;
   connecting: boolean;
   pluginResults: ToolResult[];
@@ -254,6 +286,7 @@ defineProps<{
   suppressInstructions: boolean;
   systemPromptId: string;
   isConversationActive: boolean;
+  enabledPlugins: Record<string, boolean>;
 }>();
 
 const emit = defineEmits<{
@@ -266,6 +299,7 @@ const emit = defineEmits<{
   "update:userLanguage": [value: string];
   "update:suppressInstructions": [value: boolean];
   "update:systemPromptId": [value: string];
+  "update:enabledPlugins": [value: Record<string, boolean>];
   uploadFiles: [results: ToolResult[]];
 }>();
 
@@ -326,6 +360,11 @@ function handleFileUpload(event: Event): void {
 
   // Reset the input so the same files can be uploaded again
   target.value = "";
+}
+
+function handlePluginToggle(pluginName: string, enabled: boolean): void {
+  const updated = { ...props.enabledPlugins, [pluginName]: enabled };
+  emit("update:enabledPlugins", updated);
 }
 
 defineExpose({

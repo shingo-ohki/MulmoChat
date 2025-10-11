@@ -25,6 +25,7 @@
         :suppress-instructions="suppressInstructions"
         :system-prompt-id="systemPromptId"
         :is-conversation-active="conversationActive"
+        :enabled-plugins="enabledPlugins"
         @start-chat="startChat"
         @stop-chat="stopChat"
         @set-mute="setMute"
@@ -34,6 +35,7 @@
         @update:user-language="userLanguage = $event"
         @update:suppress-instructions="suppressInstructions = $event"
         @update:system-prompt-id="systemPromptId = $event"
+        @update:enabled-plugins="enabledPlugins = $event"
         @upload-files="handleUploadFiles"
       />
 
@@ -85,6 +87,7 @@ import {
 const USER_LANGUAGE_KEY = "user_language_v1";
 const SUPPRESS_INSTRUCTIONS_KEY = "suppress_instructions_v1";
 const SYSTEM_PROMPT_ID_KEY = "system_prompt_id_v1";
+const ENABLED_PLUGINS_KEY = "enabled_plugins_v1";
 const LISTENER_MODE_SPEECH_THRESHOLD_MS = 30000; // Only disable audio after this much time since speech started
 const LISTENER_MODE_AUDIO_GAP_MS = 5000; // Duration of the intentional audio gap
 const sidebarRef = ref<InstanceType<typeof Sidebar> | null>(null);
@@ -98,6 +101,21 @@ const suppressInstructions = ref(
 const systemPromptId = ref(
   localStorage.getItem(SYSTEM_PROMPT_ID_KEY) || DEFAULT_SYSTEM_PROMPT_ID,
 );
+
+// Initialize enabled plugins - all enabled by default
+const initEnabledPlugins = (): Record<string, boolean> => {
+  const stored = localStorage.getItem(ENABLED_PLUGINS_KEY);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return {};
+    }
+  }
+  return {};
+};
+const enabledPlugins = ref<Record<string, boolean>>(initEnabledPlugins());
+
 const messages = ref<string[]>([]);
 const currentText = ref("");
 const toolResults = ref<ToolResult[]>([]);
@@ -120,6 +138,14 @@ watch(suppressInstructions, (val) => {
 watch(systemPromptId, (val) => {
   localStorage.setItem(SYSTEM_PROMPT_ID_KEY, val);
 });
+
+watch(
+  enabledPlugins,
+  (val) => {
+    localStorage.setItem(ENABLED_PLUGINS_KEY, JSON.stringify(val));
+  },
+  { deep: true },
+);
 
 const chatActive = ref(false);
 const conversationActive = ref(false);
@@ -417,7 +443,7 @@ async function startChat(): Promise<void> {
                 voice: "shimmer",
               },
             },
-            tools: pluginTools(startResponse.value),
+            tools: pluginTools(startResponse.value, enabledPlugins.value),
           },
         }),
       );

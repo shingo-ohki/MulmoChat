@@ -44,9 +44,21 @@ const pluginList = [
   PdfPlugin,
 ];
 
-export const pluginTools = (startResponse?: StartApiResponse) => {
+export const getPluginList = () => pluginList;
+
+export const pluginTools = (
+  startResponse?: StartApiResponse,
+  enabledPlugins?: Record<string, boolean>,
+) => {
   return pluginList
-    .filter((plugin) => plugin.plugin.isEnabled(startResponse))
+    .filter((plugin) => {
+      const toolName = plugin.plugin.toolDefinition.name;
+      // Check if plugin is enabled in user settings (default to true if not set)
+      const isEnabledByUser = enabledPlugins?.[toolName] ?? true;
+      // Check if plugin is enabled based on API response
+      const isEnabledByApi = plugin.plugin.isEnabled(startResponse);
+      return isEnabledByUser && isEnabledByApi;
+    })
     .map((plugin) => plugin.plugin.toolDefinition);
 };
 
