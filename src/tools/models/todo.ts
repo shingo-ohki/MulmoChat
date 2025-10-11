@@ -26,7 +26,15 @@ const toolDefinition = {
     properties: {
       action: {
         type: "string",
-        enum: ["show", "add", "delete", "clear_completed", "update", "check", "uncheck"],
+        enum: [
+          "show",
+          "add",
+          "delete",
+          "clear_completed",
+          "update",
+          "check",
+          "uncheck",
+        ],
         description:
           "Action to perform: 'show' displays the list, 'add' creates a new item, 'delete' removes an item, 'clear_completed' removes all checked items, 'update' modifies an existing item, 'check' marks an item as completed, 'uncheck' marks an item as not completed",
       },
@@ -206,10 +214,10 @@ const manageTodoList = async (
       case "update": {
         if (!text || typeof text !== "string") {
           return {
-            message: "Cannot update todo: text is required to identify the item",
+            message:
+              "Cannot update todo: text is required to identify the item",
             data: { items },
-            instructions:
-              "Tell the user which todo item they want to update.",
+            instructions: "Tell the user which todo item they want to update.",
             updating: true,
           };
         }
@@ -312,7 +320,8 @@ const manageTodoList = async (
       case "uncheck": {
         if (!text || typeof text !== "string") {
           return {
-            message: "Cannot uncheck todo: text is required to identify the item",
+            message:
+              "Cannot uncheck todo: text is required to identify the item",
             data: { items },
             instructions:
               "Tell the user which todo item they want to mark as not completed.",
