@@ -62,6 +62,25 @@ export const pluginTools = (
     .map((plugin) => plugin.plugin.toolDefinition);
 };
 
+export const getPluginSystemPrompts = (
+  startResponse?: StartApiResponse,
+  enabledPlugins?: Record<string, boolean>,
+): string => {
+  const prompts = pluginList
+    .filter((plugin) => {
+      const toolName = plugin.plugin.toolDefinition.name;
+      // Check if plugin is enabled in user settings (default to true if not set)
+      const isEnabledByUser = enabledPlugins?.[toolName] ?? true;
+      // Check if plugin is enabled based on API response
+      const isEnabledByApi = plugin.plugin.isEnabled(startResponse);
+      return isEnabledByUser && isEnabledByApi && plugin.plugin.systemPrompt;
+    })
+    .map((plugin) => plugin.plugin.systemPrompt)
+    .filter((prompt): prompt is string => !!prompt);
+
+  return prompts.length > 0 ? ` ${prompts.join(" ")}` : "";
+};
+
 const plugins = pluginList.reduce(
   (acc, plugin) => {
     acc[plugin.plugin.toolDefinition.name] = plugin.plugin;

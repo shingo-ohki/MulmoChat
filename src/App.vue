@@ -75,6 +75,7 @@ import {
   ToolResult,
   ToolContext,
   getToolPlugin,
+  getPluginSystemPrompts,
 } from "./tools";
 import type { StartApiResponse } from "../server/types";
 import Sidebar from "./components/Sidebar.vue";
@@ -427,9 +428,13 @@ async function startChat(): Promise<void> {
     webrtc.dc = dc;
     dc.addEventListener("open", () => {
       const selectedPrompt = getSystemPrompt(systemPromptId.value);
+      const pluginPrompts = getPluginSystemPrompts(
+        startResponse.value,
+        enabledPlugins.value,
+      );
       const instructions = selectedPrompt
-        ? `${selectedPrompt.prompt} The user's native language is ${getLanguageName(userLanguage.value)}.`
-        : `The user's native language is ${getLanguageName(userLanguage.value)}.`;
+        ? `${selectedPrompt.prompt}${pluginPrompts} The user's native language is ${getLanguageName(userLanguage.value)}.`
+        : `${pluginPrompts} The user's native language is ${getLanguageName(userLanguage.value)}.`;
 
       dc.send(
         JSON.stringify({
