@@ -26,14 +26,14 @@ const toolDefinition = {
     properties: {
       action: {
         type: "string",
-        enum: ["show", "add", "delete", "clear_completed", "update"],
+        enum: ["show", "add", "delete", "clear_completed", "update", "check", "uncheck"],
         description:
-          "Action to perform: 'show' displays the list, 'add' creates a new item, 'delete' removes an item, 'clear_completed' removes all checked items, 'update' modifies an existing item",
+          "Action to perform: 'show' displays the list, 'add' creates a new item, 'delete' removes an item, 'clear_completed' removes all checked items, 'update' modifies an existing item, 'check' marks an item as completed, 'uncheck' marks an item as not completed",
       },
       text: {
         type: "string",
         description:
-          "For 'add': the todo item text. For 'delete': the text of the item to delete (must match exactly). For 'update': the current text of the item to update. Not required for 'show' or 'clear_completed'",
+          "For 'add': the todo item text. For 'delete'/'update'/'check'/'uncheck': the text of the item to find (must match exactly). Not required for 'show' or 'clear_completed'",
       },
       newText: {
         type: "string",
@@ -257,12 +257,116 @@ const manageTodoList = async (
         };
       }
 
+      case "check": {
+        if (!text || typeof text !== "string") {
+          return {
+            message: "Cannot check todo: text is required to identify the item",
+            data: { items },
+            instructions:
+              "Tell the user which todo item they want to mark as completed.",
+            updating: true,
+          };
+        }
+
+        const itemToCheck = items.find(
+          (item) => item.text.toLowerCase() === text.toLowerCase(),
+        );
+
+        if (!itemToCheck) {
+          return {
+            message: `Todo item not found: "${text}"`,
+            data: { items },
+            jsonData: {
+              availableItems: items.map((item) => item.text),
+            },
+            instructions: `Tell the user that "${text}" was not found in the todo list. Show them the current items if helpful.`,
+            updating: true,
+          };
+        }
+
+        if (itemToCheck.completed) {
+          return {
+            message: `Todo item "${itemToCheck.text}" is already completed`,
+            data: { items },
+            instructions: `Tell the user that "${itemToCheck.text}" is already marked as completed.`,
+            updating: true,
+          };
+        }
+
+        itemToCheck.completed = true;
+        saveTodos(items);
+
+        return {
+          message: `Checked todo: "${itemToCheck.text}"`,
+          data: { items },
+          jsonData: {
+            checkedItem: itemToCheck.text,
+            totalItems: items.length,
+            completedItems: items.filter((item) => item.completed).length,
+          },
+          instructions: `Confirm to the user that "${itemToCheck.text}" has been marked as completed.`,
+          updating: true,
+        };
+      }
+
+      case "uncheck": {
+        if (!text || typeof text !== "string") {
+          return {
+            message: "Cannot uncheck todo: text is required to identify the item",
+            data: { items },
+            instructions:
+              "Tell the user which todo item they want to mark as not completed.",
+            updating: true,
+          };
+        }
+
+        const itemToUncheck = items.find(
+          (item) => item.text.toLowerCase() === text.toLowerCase(),
+        );
+
+        if (!itemToUncheck) {
+          return {
+            message: `Todo item not found: "${text}"`,
+            data: { items },
+            jsonData: {
+              availableItems: items.map((item) => item.text),
+            },
+            instructions: `Tell the user that "${text}" was not found in the todo list. Show them the current items if helpful.`,
+            updating: true,
+          };
+        }
+
+        if (!itemToUncheck.completed) {
+          return {
+            message: `Todo item "${itemToUncheck.text}" is already not completed`,
+            data: { items },
+            instructions: `Tell the user that "${itemToUncheck.text}" is already marked as not completed.`,
+            updating: true,
+          };
+        }
+
+        itemToUncheck.completed = false;
+        saveTodos(items);
+
+        return {
+          message: `Unchecked todo: "${itemToUncheck.text}"`,
+          data: { items },
+          jsonData: {
+            uncheckedItem: itemToUncheck.text,
+            totalItems: items.length,
+            completedItems: items.filter((item) => item.completed).length,
+          },
+          instructions: `Confirm to the user that "${itemToUncheck.text}" has been marked as not completed.`,
+          updating: true,
+        };
+      }
+
       default:
         return {
           message: `Unknown action: ${action}`,
           data: { items },
           instructions:
-            "Tell the user that the action was not recognized. Valid actions are: show, add, delete, clear_completed, update.",
+            "Tell the user that the action was not recognized. Valid actions are: show, add, delete, clear_completed, update, check, uncheck.",
           updating: true,
         };
     }
