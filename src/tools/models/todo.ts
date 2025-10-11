@@ -87,6 +87,7 @@ const manageTodoList = async (
           },
           instructions:
             "The todo list has been displayed. Acknowledge the current state of the list to the user.",
+          updating: true,
         };
       }
 
@@ -97,6 +98,7 @@ const manageTodoList = async (
             data: { items },
             instructions:
               "Tell the user that a todo item text is required to add an item.",
+            updating: true,
           };
         }
 
@@ -118,6 +120,7 @@ const manageTodoList = async (
             totalItems: items.length,
           },
           instructions: `Confirm to the user that "${newItem.text}" has been added to their todo list.`,
+          updating: true,
         };
       }
 
@@ -128,6 +131,7 @@ const manageTodoList = async (
             data: { items },
             instructions:
               "Tell the user which todo item they want to delete. List the current items if needed.",
+            updating: true,
           };
         }
 
@@ -143,6 +147,7 @@ const manageTodoList = async (
               availableItems: items.map((item) => item.text),
             },
             instructions: `Tell the user that "${text}" was not found in the todo list. Show them the current items if helpful.`,
+            updating: true,
           };
         }
 
@@ -158,6 +163,7 @@ const manageTodoList = async (
             totalItems: items.length,
           },
           instructions: `Confirm to the user that "${deletedItem.text}" has been removed from their todo list.`,
+          updating: true,
         };
       }
 
@@ -167,6 +173,7 @@ const manageTodoList = async (
           data: { items },
           instructions:
             "Tell the user that the action was not recognized. Valid actions are: show, add, delete.",
+          updating: true,
         };
     }
   } catch (error) {
