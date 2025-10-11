@@ -26,14 +26,14 @@ const toolDefinition = {
     properties: {
       action: {
         type: "string",
-        enum: ["show", "add", "delete"],
+        enum: ["show", "add", "delete", "clear_completed"],
         description:
-          "Action to perform: 'show' displays the list, 'add' creates a new item, 'delete' removes an item",
+          "Action to perform: 'show' displays the list, 'add' creates a new item, 'delete' removes an item, 'clear_completed' removes all checked items",
       },
       text: {
         type: "string",
         description:
-          "For 'add': the todo item text. For 'delete': the text of the item to delete (must match exactly)",
+          "For 'add': the todo item text. For 'delete': the text of the item to delete (must match exactly). Not required for 'show' or 'clear_completed'",
       },
     },
     required: ["action"],
@@ -167,12 +167,43 @@ const manageTodoList = async (
         };
       }
 
+      case "clear_completed": {
+        const completedItems = items.filter((item) => item.completed);
+        const remainingItems = items.filter((item) => !item.completed);
+
+        if (completedItems.length === 0) {
+          return {
+            message: "No completed items to clear",
+            data: { items },
+            jsonData: {
+              totalItems: items.length,
+            },
+            instructions:
+              "Tell the user that there are no completed items to clear.",
+            updating: true,
+          };
+        }
+
+        saveTodos(remainingItems);
+
+        return {
+          message: `Cleared ${completedItems.length} completed item${completedItems.length !== 1 ? "s" : ""}`,
+          data: { items: remainingItems },
+          jsonData: {
+            clearedCount: completedItems.length,
+            totalItems: remainingItems.length,
+          },
+          instructions: `Confirm to the user that ${completedItems.length} completed item${completedItems.length !== 1 ? "s have" : " has"} been removed from their todo list.`,
+          updating: true,
+        };
+      }
+
       default:
         return {
           message: `Unknown action: ${action}`,
           data: { items },
           instructions:
-            "Tell the user that the action was not recognized. Valid actions are: show, add, delete.",
+            "Tell the user that the action was not recognized. Valid actions are: show, add, delete, clear_completed.",
           updating: true,
         };
     }
