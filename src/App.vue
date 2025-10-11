@@ -432,9 +432,7 @@ async function startChat(): Promise<void> {
         startResponse.value,
         enabledPlugins.value,
       );
-      const instructions = selectedPrompt
-        ? `${selectedPrompt.prompt}${pluginPrompts} The user's native language is ${getLanguageName(userLanguage.value)}.`
-        : `${pluginPrompts} The user's native language is ${getLanguageName(userLanguage.value)}.`;
+      const instructions = `${selectedPrompt.prompt}${pluginPrompts} The user's native language is ${getLanguageName(userLanguage.value)}.`;
 
       dc.send(
         JSON.stringify({

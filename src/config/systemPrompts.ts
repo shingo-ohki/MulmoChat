@@ -27,6 +27,6 @@ export const SYSTEM_PROMPTS: SystemPrompt[] = [
 
 export const DEFAULT_SYSTEM_PROMPT_ID = "general";
 
-export function getSystemPrompt(id: string): SystemPrompt | undefined {
-  return SYSTEM_PROMPTS.find((prompt) => prompt.id === id);
+export function getSystemPrompt(id: string): SystemPrompt {
+  return SYSTEM_PROMPTS.find((prompt) => prompt.id === id) || SYSTEM_PROMPTS[0];
 }
