@@ -26,14 +26,19 @@ const toolDefinition = {
     properties: {
       action: {
         type: "string",
-        enum: ["show", "add", "delete", "clear_completed"],
+        enum: ["show", "add", "delete", "clear_completed", "update"],
         description:
-          "Action to perform: 'show' displays the list, 'add' creates a new item, 'delete' removes an item, 'clear_completed' removes all checked items",
+          "Action to perform: 'show' displays the list, 'add' creates a new item, 'delete' removes an item, 'clear_completed' removes all checked items, 'update' modifies an existing item",
       },
       text: {
         type: "string",
         description:
-          "For 'add': the todo item text. For 'delete': the text of the item to delete (must match exactly). Not required for 'show' or 'clear_completed'",
+          "For 'add': the todo item text. For 'delete': the text of the item to delete (must match exactly). For 'update': the current text of the item to update. Not required for 'show' or 'clear_completed'",
+      },
+      newText: {
+        type: "string",
+        description:
+          "For 'update' action only: the new text to replace the existing item text",
       },
     },
     required: ["action"],
@@ -66,7 +71,7 @@ const manageTodoList = async (
   context: ToolContext,
   args: Record<string, any>,
 ): Promise<ToolResult<TodoToolData>> => {
-  const { action, text } = args;
+  const { action, text, newText } = args;
 
   try {
     const items = loadTodos();
@@ -198,12 +203,66 @@ const manageTodoList = async (
         };
       }
 
+      case "update": {
+        if (!text || typeof text !== "string") {
+          return {
+            message: "Cannot update todo: text is required to identify the item",
+            data: { items },
+            instructions:
+              "Tell the user which todo item they want to update.",
+            updating: true,
+          };
+        }
+
+        if (!newText || typeof newText !== "string" || newText.trim() === "") {
+          return {
+            message: "Cannot update todo: newText is required",
+            data: { items },
+            instructions:
+              "Tell the user what the new text should be for the todo item.",
+            updating: true,
+          };
+        }
+
+        const itemToUpdate = items.find(
+          (item) => item.text.toLowerCase() === text.toLowerCase(),
+        );
+
+        if (!itemToUpdate) {
+          return {
+            message: `Todo item not found: "${text}"`,
+            data: { items },
+            jsonData: {
+              availableItems: items.map((item) => item.text),
+            },
+            instructions: `Tell the user that "${text}" was not found in the todo list. Show them the current items if helpful.`,
+            updating: true,
+          };
+        }
+
+        const oldText = itemToUpdate.text;
+        itemToUpdate.text = newText.trim();
+        saveTodos(items);
+
+        return {
+          message: `Updated todo from "${oldText}" to "${itemToUpdate.text}"`,
+          data: { items },
+          jsonData: {
+            oldText,
+            newText: itemToUpdate.text,
+            totalItems: items.length,
+          },
+          instructions: `Confirm to the user that the todo item has been updated from "${oldText}" to "${itemToUpdate.text}".`,
+          updating: true,
+        };
+      }
+
       default:
         return {
           message: `Unknown action: ${action}`,
           data: { items },
           instructions:
-            "Tell the user that the action was not recognized. Valid actions are: show, add, delete, clear_completed.",
+            "Tell the user that the action was not recognized. Valid actions are: show, add, delete, clear_completed, update.",
           updating: true,
         };
     }
