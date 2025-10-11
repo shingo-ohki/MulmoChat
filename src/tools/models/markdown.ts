@@ -130,4 +130,6 @@ export const plugin: ToolPlugin = {
   isEnabled: () => true,
   viewComponent: MarkdownView,
   previewComponent: MarkdownPreview,
+  systemPrompt:
+    "Call the pushMarkdown API to display documents when the user is asking for a document.",
 };
