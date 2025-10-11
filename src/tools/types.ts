@@ -54,4 +54,5 @@ export interface ToolPlugin<T = Record<string, any>, J = any> {
   viewComponent?: any; // Vue component for rendering results
   previewComponent?: any; // Vue component for sidebar preview
   fileUpload?: FileUploadConfig; // Optional file upload configuration
+  systemPrompt?: string; // Optional tool-specific system prompt statement
 }
