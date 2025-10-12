@@ -1,5 +1,6 @@
 import { ToolPlugin, ToolContext, ToolResult } from "../types";
 import { SYSTEM_PROMPTS } from "../../config/systemPrompts";
+import SwitchModePreview from "../previews/switchMode.vue";
 
 const toolName = "switchMode";
 
@@ -94,6 +95,7 @@ export const plugin: ToolPlugin = {
   execute: switchModeExecute,
   generatingMessage: "Switching mode...",
   isEnabled: () => true,
+  previewComponent: SwitchModePreview,
   systemPrompt:
     "When users ask to change the mode, personality, or behavior of the AI (e.g., 'switch to tutor mode', 'change to listener mode', 'be a teacher'), use the switchMode function. Note that switching modes will disconnect and reconnect the conversation.",
 };
