@@ -263,6 +263,7 @@ export function useRealtimeSession(
         const instructions = options.buildInstructions({
           startResponse: startResponse.value,
         });
+        console.log(`INSTRUCTIONS:\n${instructions}`);
         const tools = options.buildTools({
           startResponse: startResponse.value,
         });
