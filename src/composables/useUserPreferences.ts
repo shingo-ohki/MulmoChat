@@ -7,7 +7,7 @@ import {
   getSystemPrompt,
 } from "../config/systemPrompts";
 import { pluginTools, getPluginSystemPrompts } from "../tools";
-import type { StartApiResponse } from "../../server/types";
+import type { BuildContext } from "./types";
 
 const USER_LANGUAGE_KEY = "user_language_v1";
 const SUPPRESS_INSTRUCTIONS_KEY = "suppress_instructions_v1";
@@ -48,14 +48,10 @@ export interface UserPreferencesState {
   enabledPlugins: Record<string, boolean>;
 }
 
-export interface InstructionBuildContext {
-  startResponse: StartApiResponse | null;
-}
-
 export interface UseUserPreferencesReturn {
   state: UserPreferencesState;
-  buildInstructions: (context: InstructionBuildContext) => string;
-  buildTools: (context: InstructionBuildContext) => unknown[];
+  buildInstructions: (context: BuildContext) => string;
+  buildTools: (context: BuildContext) => unknown[];
 }
 
 const initEnabledPlugins = (): Record<string, boolean> => {

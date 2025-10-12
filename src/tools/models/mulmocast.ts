@@ -90,8 +90,7 @@ const mulmocast = async (
       "<style>A highly polished 2D digital illustration in anime and manga style, featuring clean linework, soft shading, vivid colors, and expressive facial detailing. The composition emphasizes clarity and visual impact with a minimalistic background and a strong character focus. The lighting is even and bright, giving the image a crisp and energetic feel, reminiscent of high-quality character art used in Japanese visual novels or mobile games. Let the art convey the story and emotions without text. Use the last image for the aspect ratio.</style>",
     comicstrips:
       "<style>Dilbert style multi-panel comic strips in landscape mode. Use speech bubbles with short, natural dialogue (1–6 words). Keep text minimal. Use the last image for the aspect ratio.</style>",
-    ghibli:
-      "<style>Ghibli style.</style>",
+    ghibli: "<style>Ghibli style.</style>",
   };
 
   const style =

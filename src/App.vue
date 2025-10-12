@@ -21,23 +21,27 @@
         :selected-result="selectedResult"
         :user-input="userInput"
         :is-muted="isMuted"
-        :user-language="userLanguage"
-        :suppress-instructions="suppressInstructions"
-        :system-prompt-id="systemPromptId"
+        :user-language="userPreferences.userLanguage"
+        :suppress-instructions="userPreferences.suppressInstructions"
+        :system-prompt-id="userPreferences.systemPromptId"
         :is-conversation-active="conversationActive"
-        :enabled-plugins="enabledPlugins"
-        :custom-instructions="customInstructions"
+        :enabled-plugins="userPreferences.enabledPlugins"
+        :custom-instructions="userPreferences.customInstructions"
         @start-chat="startChat"
         @stop-chat="stopChat"
         @set-mute="setMute"
         @select-result="handleSelectResult"
         @send-text-message="sendTextMessage"
         @update:user-input="userInput = $event"
-        @update:user-language="userLanguage = $event"
-        @update:suppress-instructions="suppressInstructions = $event"
-        @update:system-prompt-id="systemPromptId = $event"
-        @update:enabled-plugins="enabledPlugins = $event"
-        @update:custom-instructions="customInstructions = $event"
+        @update:user-language="userPreferences.userLanguage = $event"
+        @update:suppress-instructions="
+          userPreferences.suppressInstructions = $event
+        "
+        @update:system-prompt-id="userPreferences.systemPromptId = $event"
+        @update:enabled-plugins="userPreferences.enabledPlugins = $event"
+        @update:custom-instructions="
+          userPreferences.customInstructions = $event
+        "
         @upload-files="handleUploadFiles"
       />
 
@@ -70,15 +74,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, computed, watch } from "vue";
+import { ref, computed, watch } from "vue";
 import { toolExecute, getToolPlugin } from "./tools";
 import Sidebar from "./components/Sidebar.vue";
 import { useRealtimeSession } from "./composables/useRealtimeSession";
 import { useUserPreferences } from "./composables/useUserPreferences";
 import { useToolResults } from "./composables/useToolResults";
+import { useScrolling } from "./composables/useScrolling";
+import { SESSION_CONFIG } from "./config/session";
 
-const LISTENER_MODE_SPEECH_THRESHOLD_MS = 15000; // Only disable audio after this much time since speech started
-const LISTENER_MODE_AUDIO_GAP_MS = 2000; // Duration of the intentional audio gap
 const sidebarRef = ref<InstanceType<typeof Sidebar> | null>(null);
 const preferences = useUserPreferences();
 const {
@@ -91,44 +95,13 @@ async function sleep(milliseconds: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-const userLanguage = computed({
-  get: () => userPreferences.userLanguage,
-  set: (val: string) => {
-    userPreferences.userLanguage = val;
-  },
-});
-
-const suppressInstructions = computed({
-  get: () => userPreferences.suppressInstructions,
-  set: (val: boolean) => {
-    userPreferences.suppressInstructions = val;
-  },
-});
-
-const systemPromptId = computed({
-  get: () => userPreferences.systemPromptId,
-  set: (val: string) => {
-    userPreferences.systemPromptId = val;
-  },
-});
-
-const customInstructions = computed({
-  get: () => userPreferences.customInstructions,
-  set: (val: string) => {
-    userPreferences.customInstructions = val;
-  },
-});
-
-const enabledPlugins = computed({
-  get: () => userPreferences.enabledPlugins,
-  set: (val: Record<string, boolean>) => {
-    userPreferences.enabledPlugins = val;
-  },
-});
-
 const messages = ref<string[]>([]);
 const currentText = ref("");
 const userInput = ref("");
+
+const scrolling = useScrolling({
+  sidebarRef: () => sidebarRef.value,
+});
 
 const session = useRealtimeSession({
   buildInstructions: (context) => buildPreferenceInstructions(context),
@@ -165,17 +138,19 @@ const {
 } = useToolResults({
   toolExecute,
   getToolPlugin,
-  suppressInstructions,
+  suppressInstructions: computed(() => userPreferences.suppressInstructions),
   sleep,
   sendInstructions,
   sendFunctionCallOutput,
   conversationActive,
   isDataChannelOpen,
-  scrollToBottomOfSideBar,
-  scrollCurrentResultToTop,
+  scrollToBottomOfSideBar: scrolling.scrollSidebarToBottom,
+  scrollCurrentResultToTop: scrolling.scrollCanvasToTop,
 });
 
-const isListenerMode = computed(() => systemPromptId.value === "listener");
+const isListenerMode = computed(
+  () => userPreferences.systemPromptId === "listener",
+);
 const lastSpeechStartedTime = ref<number | null>(null);
 
 registerEventHandlers({
@@ -205,13 +180,13 @@ registerEventHandlers({
       ? Date.now() - lastSpeechStartedTime.value
       : 0;
 
-    if (timeSinceLastStart > LISTENER_MODE_SPEECH_THRESHOLD_MS) {
+    if (timeSinceLastStart > SESSION_CONFIG.LISTENER_MODE_SPEECH_THRESHOLD_MS) {
       console.log("MSG: Speech stopped for a long time");
       setLocalAudioEnabled(false);
       setTimeout(() => {
         setMute(isMuted.value);
         lastSpeechStartedTime.value = Date.now();
-      }, LISTENER_MODE_AUDIO_GAP_MS);
+      }, SESSION_CONFIG.LISTENER_MODE_AUDIO_GAP_MS);
     }
   },
   onError: (error) => {
@@ -227,34 +202,6 @@ watch(
   { immediate: true },
 );
 
-function scrollToBottomOfSideBar(): void {
-  sidebarRef.value?.scrollToBottom();
-}
-
-function scrollCurrentResultToTop(): void {
-  nextTick(() => {
-    const mainContent = document.querySelector(
-      ".flex-1.border.rounded.bg-gray-50.overflow-hidden",
-    );
-    if (mainContent) {
-      const scrollableElement = mainContent.querySelector(
-        "iframe, .w-full.h-full.overflow-auto, .w-full.h-full.flex",
-      );
-      if (scrollableElement) {
-        if (scrollableElement.tagName === "IFRAME") {
-          try {
-            scrollableElement.contentWindow?.scrollTo(0, 0);
-          } catch (e) {
-            // Cross-origin iframe, can't scroll
-          }
-        } else {
-          scrollableElement.scrollTop = 0;
-        }
-      }
-    }
-  });
-}
-
 async function startChat(): Promise<void> {
   // Gard against double start
   if (chatActive.value || connecting.value) return;
@@ -267,10 +214,14 @@ async function sendTextMessage(providedText?: string): Promise<void> {
   const text = (providedText || userInput.value).trim();
   if (!text) return;
 
-  // Wait for conversation to be active (up to 5 seconds)
-  for (let i = 0; i < 5 && conversationActive.value; i++) {
+  // Wait for conversation to be inactive
+  for (
+    let i = 0;
+    i < SESSION_CONFIG.MESSAGE_SEND_RETRY_ATTEMPTS && conversationActive.value;
+    i++
+  ) {
     console.log(`WAIT:${i} \n`, text);
-    await sleep(1000);
+    await sleep(SESSION_CONFIG.MESSAGE_SEND_RETRY_DELAY_MS);
   }
 
   const sent = await sendUserMessageInternal(text);
@@ -299,7 +250,7 @@ async function switchMode(newSystemPromptId: string): Promise<void> {
   }
 
   // Step 2: Switch to the specified system prompt mode
-  systemPromptId.value = newSystemPromptId;
+  userPreferences.systemPromptId = newSystemPromptId;
 
   // Wait a brief moment to ensure cleanup is complete
   await sleep(500);

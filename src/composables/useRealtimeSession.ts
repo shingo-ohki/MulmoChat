@@ -2,22 +2,8 @@
 
 import { ref, shallowRef } from "vue";
 import type { StartApiResponse } from "../../server/types";
-
-type ToolCallMessage = {
-  type: string;
-  id?: string;
-  call_id?: string;
-  name?: string;
-  delta?: string;
-  arguments?: string;
-  truncated?: boolean;
-  error?: unknown;
-  [key: string]: unknown;
-};
-
-interface BuildContext {
-  startResponse: StartApiResponse | null;
-}
+import type { BuildContext, ToolCallMessage } from "./types";
+import { isValidToolCallMessage } from "./types";
 
 type BrowserRTCPeerConnection = globalThis.RTCPeerConnection;
 type BrowserRTCDataChannel = globalThis.RTCDataChannel;
@@ -115,15 +101,27 @@ export function useRealtimeSession(
   };
 
   const handleMessage = (event: MessageEvent) => {
-    const msg: ToolCallMessage = JSON.parse(event.data);
+    let msg: ToolCallMessage;
+
+    try {
+      msg = JSON.parse(event.data) as ToolCallMessage;
+    } catch (error) {
+      console.error("Failed to parse message:", error);
+      handlers.onError?.(error);
+      return;
+    }
+
+    if (!isValidToolCallMessage(msg)) {
+      console.warn("Invalid message format:", msg);
+      return;
+    }
+
     const id = msg.id || msg.call_id;
 
     switch (msg.type) {
       case "error":
         console.error("Error", msg.error);
-        if (handlers.onError) {
-          handlers.onError(msg.error);
-        }
+        handlers.onError?.(msg.error);
         break;
       case "response.text.delta":
         handlers.onTextDelta?.(msg.delta ?? "");

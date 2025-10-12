@@ -2,6 +2,7 @@
 
 import { ref, type Ref } from "vue";
 import type { ToolContext, ToolResult } from "../tools";
+import { SESSION_CONFIG } from "../config/session";
 
 type ToolExecuteFn = typeof import("../tools").toolExecute;
 type GetToolPluginFn = typeof import("../tools").getToolPlugin;
@@ -187,9 +188,14 @@ export function useToolResults(
 
       const plugin = options.getToolPlugin(result.toolName);
       if (plugin?.uploadMessage && options.isDataChannelOpen()) {
-        for (let i = 0; i < 5 && options.conversationActive.value; i++) {
+        for (
+          let i = 0;
+          i < SESSION_CONFIG.UPLOAD_RETRY_ATTEMPTS &&
+          options.conversationActive.value;
+          i++
+        ) {
           console.log(`WAIT:${i} \n`, plugin.uploadMessage);
-          await options.sleep(1000);
+          await options.sleep(SESSION_CONFIG.UPLOAD_RETRY_DELAY_MS);
         }
         console.log(`UPL:${result.toolName}\n${plugin.uploadMessage}`);
         options.sendInstructions(plugin.uploadMessage);
