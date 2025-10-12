@@ -225,6 +225,26 @@
 
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
+              Custom Instructions
+            </label>
+            <textarea
+              :value="customInstructions"
+              @input="
+                $emit(
+                  'update:customInstructions',
+                  ($event.target as HTMLTextAreaElement).value,
+                )
+              "
+              placeholder="Add additional instructions for the AI..."
+              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-20"
+            ></textarea>
+            <p class="text-xs text-gray-500 mt-1">
+              These instructions will be added to the system prompt.
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
               Enabled Plugins
             </label>
             <div class="max-h-60 overflow-y-auto border rounded p-2 space-y-1">
@@ -294,6 +314,7 @@ const props = defineProps<{
   systemPromptId: string;
   isConversationActive: boolean;
   enabledPlugins: Record<string, boolean>;
+  customInstructions: string;
 }>();
 
 const emit = defineEmits<{
@@ -307,6 +328,7 @@ const emit = defineEmits<{
   "update:suppressInstructions": [value: boolean];
   "update:systemPromptId": [value: string];
   "update:enabledPlugins": [value: Record<string, boolean>];
+  "update:customInstructions": [value: string];
   uploadFiles: [results: ToolResult[]];
 }>();
 

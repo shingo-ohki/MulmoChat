@@ -26,6 +26,7 @@
         :system-prompt-id="systemPromptId"
         :is-conversation-active="conversationActive"
         :enabled-plugins="enabledPlugins"
+        :custom-instructions="customInstructions"
         @start-chat="startChat"
         @stop-chat="stopChat"
         @set-mute="setMute"
@@ -36,6 +37,7 @@
         @update:suppress-instructions="suppressInstructions = $event"
         @update:system-prompt-id="systemPromptId = $event"
         @update:enabled-plugins="enabledPlugins = $event"
+        @update:custom-instructions="customInstructions = $event"
         @upload-files="handleUploadFiles"
       />
 
@@ -89,6 +91,7 @@ const USER_LANGUAGE_KEY = "user_language_v1";
 const SUPPRESS_INSTRUCTIONS_KEY = "suppress_instructions_v1";
 const SYSTEM_PROMPT_ID_KEY = "system_prompt_id_v1";
 const ENABLED_PLUGINS_KEY = "enabled_plugins_v1";
+const CUSTOM_INSTRUCTIONS_KEY = "custom_instructions_v1";
 const LISTENER_MODE_SPEECH_THRESHOLD_MS = 30000; // Only disable audio after this much time since speech started
 const LISTENER_MODE_AUDIO_GAP_MS = 5000; // Duration of the intentional audio gap
 const sidebarRef = ref<InstanceType<typeof Sidebar> | null>(null);
@@ -101,6 +104,9 @@ const suppressInstructions = ref(
 );
 const systemPromptId = ref(
   localStorage.getItem(SYSTEM_PROMPT_ID_KEY) || DEFAULT_SYSTEM_PROMPT_ID,
+);
+const customInstructions = ref(
+  localStorage.getItem(CUSTOM_INSTRUCTIONS_KEY) || "",
 );
 
 // Initialize enabled plugins - all enabled by default
@@ -138,6 +144,10 @@ watch(suppressInstructions, (val) => {
 
 watch(systemPromptId, (val) => {
   localStorage.setItem(SYSTEM_PROMPT_ID_KEY, val);
+});
+
+watch(customInstructions, (val) => {
+  localStorage.setItem(CUSTOM_INSTRUCTIONS_KEY, val);
 });
 
 watch(
@@ -432,7 +442,10 @@ async function startChat(): Promise<void> {
         startResponse.value,
         enabledPlugins.value,
       );
-      const instructions = `${selectedPrompt.prompt}${pluginPrompts} The user's native language is ${getLanguageName(userLanguage.value)}.`;
+      const customInstructionsText = customInstructions.value.trim()
+        ? ` ${customInstructions.value}`
+        : "";
+      const instructions = `${selectedPrompt.prompt}${pluginPrompts}${customInstructionsText} The user's native language is ${getLanguageName(userLanguage.value)}.`;
 
       dc.send(
         JSON.stringify({
