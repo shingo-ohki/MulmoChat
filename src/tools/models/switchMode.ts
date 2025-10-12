@@ -4,6 +4,19 @@ import SwitchModePreview from "../previews/switchMode.vue";
 
 const toolName = "switchMode";
 
+const modeEntries = SYSTEM_PROMPTS.map((prompt) => ({
+  id: prompt.id,
+  name: prompt.name,
+}));
+
+const modeOptionsDescription = modeEntries
+  .map((entry) => `'${entry.id}' (${entry.name})`)
+  .join(", ");
+
+const availableModesSummary = modeEntries
+  .map((entry) => `${entry.id} (${entry.name})`)
+  .join(", ");
+
 const toolDefinition = {
   type: "function" as const,
   name: toolName,
@@ -14,43 +27,51 @@ const toolDefinition = {
     properties: {
       mode: {
         type: "string",
-        enum: SYSTEM_PROMPTS.map((p) => p.id),
-        description: `The mode to switch to. Options: ${SYSTEM_PROMPTS.map((p) => `'${p.id}' (${p.name})`).join(", ")}`,
+        enum: modeEntries.map((entry) => entry.id),
+        description: `The mode to switch to. Options: ${modeOptionsDescription}`,
       },
     },
     required: ["mode"],
   },
 };
 
+type SwitchModeArgs = {
+  mode: string;
+};
+
 const switchModeExecute = async (
-  context: ToolContext,
-  args: Record<string, any>,
+  _context: ToolContext,
+  args: SwitchModeArgs,
 ): Promise<ToolResult> => {
   const { mode } = args;
 
   try {
     // Validate mode
-    const validMode = SYSTEM_PROMPTS.find((p) => p.id === mode);
+    const validMode = modeEntries.find((entry) => entry.id === mode);
     if (!validMode) {
       return {
         message: `Invalid mode: ${mode}`,
         jsonData: {
           success: false,
           error: "Invalid mode",
-          availableModes: SYSTEM_PROMPTS.map((p) => ({
-            id: p.id,
-            name: p.name,
-          })),
+          availableModes: modeEntries,
         },
-        instructions: `Tell the user that '${mode}' is not a valid mode. Available modes are: ${SYSTEM_PROMPTS.map((p) => `${p.id} (${p.name})`).join(", ")}.`,
+        instructions: `Tell the user that '${mode}' is not a valid mode. Available modes are: ${availableModesSummary}.`,
       };
     }
 
     // Call switchMode asynchronously (don't await)
-    if (typeof window !== "undefined" && (window as any).switchMode) {
+    const globalObject = globalThis as typeof globalThis & {
+      switchMode?: (selectedMode: string) => void;
+    };
+
+    if (
+      typeof window !== "undefined" &&
+      typeof globalObject.switchMode === "function"
+    ) {
       // Fire and forget - this will disconnect and reconnect
       setTimeout(() => {
-        (window as any).switchMode(mode);
+        globalObject.switchMode?.(mode);
       }, 0);
     } else {
       console.error("switchMode function not found on window object");
@@ -70,7 +91,7 @@ const switchModeExecute = async (
       message: `Mode switch to '${validMode.name}' initiated`,
       jsonData: {
         success: true,
-        mode: mode,
+        mode,
         modeName: validMode.name,
       },
       instructions: `Tell the user that you are switching to ${validMode.name} mode and will reconnect shortly. The conversation will be interrupted momentarily during the reconnection.`,
