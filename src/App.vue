@@ -71,10 +71,11 @@
 
 <script setup lang="ts">
 import { ref, nextTick, computed, watch } from "vue";
-import { toolExecute, ToolResult, ToolContext, getToolPlugin } from "./tools";
+import { toolExecute, getToolPlugin } from "./tools";
 import Sidebar from "./components/Sidebar.vue";
 import { useRealtimeSession } from "./composables/useRealtimeSession";
 import { useUserPreferences } from "./composables/useUserPreferences";
+import { useToolResults } from "./composables/useToolResults";
 
 const LISTENER_MODE_SPEECH_THRESHOLD_MS = 15000; // Only disable audio after this much time since speech started
 const LISTENER_MODE_AUDIO_GAP_MS = 2000; // Duration of the intentional audio gap
@@ -85,6 +86,10 @@ const {
   buildInstructions: buildPreferenceInstructions,
   buildTools: buildPreferenceTools,
 } = preferences;
+
+async function sleep(milliseconds: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
 
 const userLanguage = computed({
   get: () => userPreferences.userLanguage,
@@ -123,10 +128,6 @@ const enabledPlugins = computed({
 
 const messages = ref<string[]>([]);
 const currentText = ref("");
-const toolResults = ref<ToolResult[]>([]);
-const isGeneratingImage = ref(false);
-const generatingMessage = ref("");
-const selectedResult = ref<ToolResult | null>(null);
 const userInput = ref("");
 
 const session = useRealtimeSession({
@@ -152,12 +153,34 @@ const {
   registerEventHandlers,
 } = session;
 
+const {
+  toolResults,
+  selectedResult,
+  isGeneratingImage,
+  generatingMessage,
+  handleToolCall,
+  handleSelectResult,
+  handleUpdateResult,
+  handleUploadFiles,
+} = useToolResults({
+  toolExecute,
+  getToolPlugin,
+  suppressInstructions,
+  sleep,
+  sendInstructions,
+  sendFunctionCallOutput,
+  conversationActive,
+  isDataChannelOpen,
+  scrollToBottomOfSideBar,
+  scrollCurrentResultToTop,
+});
+
 const isListenerMode = computed(() => systemPromptId.value === "listener");
 const lastSpeechStartedTime = ref<number | null>(null);
 
 registerEventHandlers({
   onToolCall: (msg, id, argStr) => {
-    processToolCall(msg, id, argStr);
+    void handleToolCall({ msg, rawArgs: argStr });
   },
   onTextDelta: (delta) => {
     currentText.value += delta;
@@ -204,10 +227,6 @@ watch(
   { immediate: true },
 );
 
-const sleep = async (milliseconds: number) => {
-  return await new Promise((resolve) => setTimeout(resolve, milliseconds));
-};
-
 function scrollToBottomOfSideBar(): void {
   sidebarRef.value?.scrollToBottom();
 }
@@ -234,85 +253,6 @@ function scrollCurrentResultToTop(): void {
       }
     }
   });
-}
-
-async function processToolCall(
-  msg: any,
-  id: string,
-  argStr: string,
-): Promise<void> {
-  try {
-    const args = typeof argStr === "string" ? JSON.parse(argStr) : argStr;
-    isGeneratingImage.value = true;
-    generatingMessage.value =
-      getToolPlugin(msg.name)?.generatingMessage || "Processing...";
-    scrollToBottomOfSideBar();
-    const context: ToolContext = {
-      currentResult: selectedResult.value,
-    };
-    const promise = toolExecute(context, msg.name, args);
-    const waitingMessage = getToolPlugin(msg.name)?.waitingMessage;
-    if (waitingMessage) {
-      sendInstructions(waitingMessage);
-    }
-
-    const result = await promise;
-
-    // Check if this is an update to the currently selected result
-    if (
-      result.updating &&
-      context.currentResult &&
-      result.toolName === context.currentResult.toolName
-    ) {
-      // Find and update the existing result
-      const index = toolResults.value.findIndex(
-        (r) => r.uuid === context.currentResult?.uuid,
-      );
-      if (index !== -1) {
-        toolResults.value[index] = result;
-      } else {
-        console.error("ERR:Failed to find the result to update");
-      }
-      selectedResult.value = result;
-    } else {
-      // Add as new result
-      toolResults.value.push(result);
-      selectedResult.value = result;
-      scrollToBottomOfSideBar();
-      scrollCurrentResultToTop();
-    }
-
-    const outputPayload = {
-      status: result.message,
-      data: result.jsonData,
-    };
-    console.log(`RES:${result.toolName}\n`, outputPayload);
-    sendFunctionCallOutput(msg.call_id, JSON.stringify(outputPayload));
-    if (
-      result.instructions &&
-      (!suppressInstructions.value || result.instructionsRequired)
-    ) {
-      const delay = getToolPlugin(msg.name)?.delayAfterExecution;
-      if (delay) {
-        await sleep(delay);
-      }
-      console.log(`INS:${result.toolName}\n${result.instructions}`);
-      sendInstructions(result.instructions);
-    }
-  } catch (e) {
-    console.error("Failed to parse function call arguments", e);
-    // Let the model know that we failed to parse the function call arguments.
-    if (msg.call_id) {
-      sendFunctionCallOutput(
-        msg.call_id,
-        `Failed to parse function call arguments: ${e}`,
-      );
-    }
-    // We don't need to send "response.create" here.
-  } finally {
-    isGeneratingImage.value = false;
-    generatingMessage.value = "";
-  }
 }
 
 async function startChat(): Promise<void> {
@@ -342,53 +282,6 @@ async function sendTextMessage(providedText?: string): Promise<void> {
   if (!providedText) {
     userInput.value = "";
   }
-}
-
-function handleSelectResult(result: ToolResult): void {
-  selectedResult.value = result;
-  scrollCurrentResultToTop();
-}
-
-function handleUpdateResult(updatedResult: ToolResult): void {
-  // Update the result in the pluginResults array using uuid comparison
-  const index = toolResults.value.findIndex(
-    (r) => r.uuid === updatedResult.uuid,
-  );
-  if (index !== -1) {
-    toolResults.value[index] = updatedResult;
-  }
-  // Update the selected result only if it matches the updated result
-  if (selectedResult.value?.uuid === updatedResult.uuid) {
-    selectedResult.value = updatedResult;
-  }
-}
-
-async function handleUploadFiles(results: ToolResult[]): Promise<void> {
-  for (const result of results) {
-    // Add UUID to make it a complete ToolResult
-    const completeResult = {
-      ...result,
-      uuid: crypto.randomUUID(),
-    };
-
-    toolResults.value.push(completeResult);
-    selectedResult.value = completeResult;
-
-    // Send uploadMessage to LLM if available
-    const plugin = getToolPlugin(result.toolName);
-    if (plugin?.uploadMessage && isDataChannelOpen()) {
-      // Wait for conversation to be active (up to 5 seconds)
-      for (let i = 0; i < 5 && conversationActive.value; i++) {
-        console.log(`WAIT:${i} \n`, plugin.uploadMessage);
-        await sleep(1000);
-      }
-      console.log(`UPL:${result.toolName}\n${plugin.uploadMessage}`);
-      sendInstructions(plugin.uploadMessage);
-    }
-  }
-
-  scrollToBottomOfSideBar();
-  scrollCurrentResultToTop();
 }
 
 function stopChat(): void {
