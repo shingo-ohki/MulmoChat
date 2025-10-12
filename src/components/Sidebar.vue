@@ -375,15 +375,10 @@ function handlePluginToggle(pluginName: string, enabled: boolean): void {
 }
 
 function getModeIcon(): string {
-  switch (props.systemPromptId) {
-    case "tutor":
-      return "school";
-    case "listener":
-      return "hearing";
-    case "general":
-    default:
-      return "star";
-  }
+  const systemPrompt = SYSTEM_PROMPTS.find(
+    (prompt) => prompt.id === props.systemPromptId,
+  );
+  return systemPrompt?.icon || "star";
 }
 
 defineExpose({
