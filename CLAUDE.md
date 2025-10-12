@@ -86,7 +86,10 @@ Storage keys:
 
 The application implements a comprehensive plugin architecture located in `src/tools/`:
 
-**IMPORTANT**: Keep all plugin-specific code out of App.vue. The plugin system is designed to be modular and self-contained - App.vue should only handle generic plugin execution through the centralized plugin interface.
+**IMPORTANT**: Keep all plugin-specific code out of App.vue and composables. The plugin system is designed to be modular and self-contained:
+- **App.vue**: Only orchestrates UI and coordinates between composables using the centralized plugin interface (`toolExecute`, `getToolPlugin`)
+- **Composables**: Handle generic concerns (WebRTC, results management, preferences) without plugin-specific logic
+- **Plugin system**: All plugin-specific behavior lives in `src/tools/`
 
 #### Core Plugin Interface (src/tools/type.ts)
 - **ToolPlugin**: Defines plugin structure with tool definition, execute function, and metadata
