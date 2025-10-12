@@ -70,57 +70,56 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, computed } from "vue";
-import {
-  pluginTools,
-  toolExecute,
-  ToolResult,
-  ToolContext,
-  getToolPlugin,
-  getPluginSystemPrompts,
-} from "./tools";
+import { ref, nextTick, computed, watch } from "vue";
+import { toolExecute, ToolResult, ToolContext, getToolPlugin } from "./tools";
 import Sidebar from "./components/Sidebar.vue";
-import { DEFAULT_LANGUAGE_CODE, getLanguageName } from "./config/languages";
-import {
-  DEFAULT_SYSTEM_PROMPT_ID,
-  getSystemPrompt,
-} from "./config/systemPrompts";
 import { useRealtimeSession } from "./composables/useRealtimeSession";
+import { useUserPreferences } from "./composables/useUserPreferences";
 
-const USER_LANGUAGE_KEY = "user_language_v1";
-const SUPPRESS_INSTRUCTIONS_KEY = "suppress_instructions_v1";
-const SYSTEM_PROMPT_ID_KEY = "system_prompt_id_v1";
-const ENABLED_PLUGINS_KEY = "enabled_plugins_v1";
-const CUSTOM_INSTRUCTIONS_KEY = "custom_instructions_v1";
 const LISTENER_MODE_SPEECH_THRESHOLD_MS = 15000; // Only disable audio after this much time since speech started
 const LISTENER_MODE_AUDIO_GAP_MS = 2000; // Duration of the intentional audio gap
 const sidebarRef = ref<InstanceType<typeof Sidebar> | null>(null);
-const userLanguage = ref(
-  localStorage.getItem(USER_LANGUAGE_KEY) || DEFAULT_LANGUAGE_CODE,
-);
-const suppressInstructions = ref(
-  localStorage.getItem(SUPPRESS_INSTRUCTIONS_KEY) === "true",
-);
-const systemPromptId = ref(
-  localStorage.getItem(SYSTEM_PROMPT_ID_KEY) || DEFAULT_SYSTEM_PROMPT_ID,
-);
-const customInstructions = ref(
-  localStorage.getItem(CUSTOM_INSTRUCTIONS_KEY) || "",
-);
+const preferences = useUserPreferences();
+const {
+  state: userPreferences,
+  buildInstructions: buildPreferenceInstructions,
+  buildTools: buildPreferenceTools,
+} = preferences;
 
-// Initialize enabled plugins - all enabled by default
-const initEnabledPlugins = (): Record<string, boolean> => {
-  const stored = localStorage.getItem(ENABLED_PLUGINS_KEY);
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch {
-      return {};
-    }
-  }
-  return {};
-};
-const enabledPlugins = ref<Record<string, boolean>>(initEnabledPlugins());
+const userLanguage = computed({
+  get: () => userPreferences.userLanguage,
+  set: (val: string) => {
+    userPreferences.userLanguage = val;
+  },
+});
+
+const suppressInstructions = computed({
+  get: () => userPreferences.suppressInstructions,
+  set: (val: boolean) => {
+    userPreferences.suppressInstructions = val;
+  },
+});
+
+const systemPromptId = computed({
+  get: () => userPreferences.systemPromptId,
+  set: (val: string) => {
+    userPreferences.systemPromptId = val;
+  },
+});
+
+const customInstructions = computed({
+  get: () => userPreferences.customInstructions,
+  set: (val: string) => {
+    userPreferences.customInstructions = val;
+  },
+});
+
+const enabledPlugins = computed({
+  get: () => userPreferences.enabledPlugins,
+  set: (val: Record<string, boolean>) => {
+    userPreferences.enabledPlugins = val;
+  },
+});
 
 const messages = ref<string[]>([]);
 const currentText = ref("");
@@ -130,43 +129,9 @@ const generatingMessage = ref("");
 const selectedResult = ref<ToolResult | null>(null);
 const userInput = ref("");
 
-watch(userLanguage, (val) => {
-  localStorage.setItem(USER_LANGUAGE_KEY, val);
-});
-
-watch(suppressInstructions, (val) => {
-  localStorage.setItem(SUPPRESS_INSTRUCTIONS_KEY, String(val));
-});
-
-watch(systemPromptId, (val) => {
-  localStorage.setItem(SYSTEM_PROMPT_ID_KEY, val);
-});
-
-watch(customInstructions, (val) => {
-  localStorage.setItem(CUSTOM_INSTRUCTIONS_KEY, val);
-});
-
-watch(
-  enabledPlugins,
-  (val) => {
-    localStorage.setItem(ENABLED_PLUGINS_KEY, JSON.stringify(val));
-  },
-  { deep: true },
-);
-
 const session = useRealtimeSession({
-  buildInstructions: ({ startResponse }) => {
-    const selectedPrompt = getSystemPrompt(systemPromptId.value);
-    const pluginPrompts = selectedPrompt.includePluginPrompts
-      ? getPluginSystemPrompts(startResponse, enabledPlugins.value)
-      : "";
-    const customInstructionsText = customInstructions.value.trim()
-      ? ` ${customInstructions.value}`
-      : "";
-    return `${selectedPrompt.prompt}${pluginPrompts}${customInstructionsText} The user's native language is ${getLanguageName(userLanguage.value)}.`;
-  },
-  buildTools: ({ startResponse }) =>
-    pluginTools(startResponse, enabledPlugins.value),
+  buildInstructions: (context) => buildPreferenceInstructions(context),
+  buildTools: (context) => buildPreferenceTools(context),
 });
 
 const {
