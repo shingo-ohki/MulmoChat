@@ -632,6 +632,27 @@ function setMute(muted: boolean): void {
     });
   }
 }
+
+async function switchMode(newSystemPromptId: string): Promise<void> {
+  // Step 1: Disconnect if connected
+  if (chatActive.value) {
+    stopChat();
+  }
+
+  // Step 2: Switch to the specified system prompt mode
+  systemPromptId.value = newSystemPromptId;
+
+  // Wait a brief moment to ensure cleanup is complete
+  await sleep(500);
+
+  // Step 3: Connect to the remote LLM
+  await startChat();
+}
+
+// Expose the API globally for external access
+if (typeof window !== "undefined") {
+  (window as any).switchMode = switchMode;
+}
 </script>
 
 <style scoped></style>
