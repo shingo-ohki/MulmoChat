@@ -15,6 +15,7 @@ import * as GenerateHtmlPlugin from "./models/generateHtml";
 import * as EditHtmlPlugin from "./models/editHtml";
 import * as PdfPlugin from "./models/pdf";
 import * as TodoPlugin from "./models/todo";
+import * as SwitchModePlugin from "./models/switchMode";
 import type { StartApiResponse } from "../../server/types";
 import { v4 as uuidv4 } from "uuid";
 import type {
@@ -44,6 +45,7 @@ const pluginList = [
   EditHtmlPlugin,
   PdfPlugin,
   TodoPlugin,
+  SwitchModePlugin,
 ];
 
 export const getPluginList = () => pluginList;
