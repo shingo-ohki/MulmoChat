@@ -438,10 +438,9 @@ async function startChat(): Promise<void> {
     webrtc.dc = dc;
     dc.addEventListener("open", () => {
       const selectedPrompt = getSystemPrompt(systemPromptId.value);
-      const pluginPrompts = getPluginSystemPrompts(
-        startResponse.value,
-        enabledPlugins.value,
-      );
+      const pluginPrompts = selectedPrompt.includePluginPrompts
+        ? getPluginSystemPrompts(startResponse.value, enabledPlugins.value)
+        : "";
       const customInstructionsText = customInstructions.value.trim()
         ? ` ${customInstructions.value}`
         : "";
