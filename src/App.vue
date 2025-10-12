@@ -79,13 +79,13 @@ import {
   getToolPlugin,
   getPluginSystemPrompts,
 } from "./tools";
-import type { StartApiResponse } from "../server/types";
 import Sidebar from "./components/Sidebar.vue";
 import { DEFAULT_LANGUAGE_CODE, getLanguageName } from "./config/languages";
 import {
   DEFAULT_SYSTEM_PROMPT_ID,
   getSystemPrompt,
 } from "./config/systemPrompts";
+import { useRealtimeSession } from "./composables/useRealtimeSession";
 
 const USER_LANGUAGE_KEY = "user_language_v1";
 const SUPPRESS_INSTRUCTIONS_KEY = "suppress_instructions_v1";
@@ -95,7 +95,6 @@ const CUSTOM_INSTRUCTIONS_KEY = "custom_instructions_v1";
 const LISTENER_MODE_SPEECH_THRESHOLD_MS = 15000; // Only disable audio after this much time since speech started
 const LISTENER_MODE_AUDIO_GAP_MS = 2000; // Duration of the intentional audio gap
 const sidebarRef = ref<InstanceType<typeof Sidebar> | null>(null);
-const connecting = ref(false);
 const userLanguage = ref(
   localStorage.getItem(USER_LANGUAGE_KEY) || DEFAULT_LANGUAGE_CODE,
 );
@@ -128,11 +127,8 @@ const currentText = ref("");
 const toolResults = ref<ToolResult[]>([]);
 const isGeneratingImage = ref(false);
 const generatingMessage = ref("");
-const pendingToolArgs: Record<string, string> = {};
-const processedToolCalls = new Map<string, string>();
 const selectedResult = ref<ToolResult | null>(null);
 const userInput = ref("");
-const startResponse = ref<StartApiResponse | null>(null);
 
 watch(userLanguage, (val) => {
   localStorage.setItem(USER_LANGUAGE_KEY, val);
@@ -158,19 +154,90 @@ watch(
   { deep: true },
 );
 
-const chatActive = ref(false);
-const conversationActive = ref(false);
-const isMuted = ref(false);
+const session = useRealtimeSession({
+  buildInstructions: ({ startResponse }) => {
+    const selectedPrompt = getSystemPrompt(systemPromptId.value);
+    const pluginPrompts = selectedPrompt.includePluginPrompts
+      ? getPluginSystemPrompts(startResponse, enabledPlugins.value)
+      : "";
+    const customInstructionsText = customInstructions.value.trim()
+      ? ` ${customInstructions.value}`
+      : "";
+    return `${selectedPrompt.prompt}${pluginPrompts}${customInstructionsText} The user's native language is ${getLanguageName(userLanguage.value)}.`;
+  },
+  buildTools: ({ startResponse }) =>
+    pluginTools(startResponse, enabledPlugins.value),
+});
+
+const {
+  chatActive,
+  conversationActive,
+  connecting,
+  isMuted,
+  startResponse,
+  isDataChannelOpen,
+  startChat: startRealtimeChat,
+  stopChat: stopRealtimeChat,
+  sendUserMessage: sendUserMessageInternal,
+  sendFunctionCallOutput,
+  sendInstructions,
+  setMute: sessionSetMute,
+  setLocalAudioEnabled,
+  attachRemoteAudioElement,
+  registerEventHandlers,
+} = session;
 
 const isListenerMode = computed(() => systemPromptId.value === "listener");
 const lastSpeechStartedTime = ref<number | null>(null);
 
-const webrtc = {
-  pc: null as RTCPeerConnection | null,
-  dc: null as RTCDataChannel | null,
-  localStream: null as MediaStream | null,
-  remoteStream: null as MediaStream | null,
-};
+registerEventHandlers({
+  onToolCall: (msg, id, argStr) => {
+    processToolCall(msg, id, argStr);
+  },
+  onTextDelta: (delta) => {
+    currentText.value += delta;
+  },
+  onTextCompleted: () => {
+    if (currentText.value.trim()) {
+      messages.value.push(currentText.value);
+    }
+    currentText.value = "";
+  },
+  onSpeechStarted: () => {
+    if (isListenerMode.value) {
+      console.log("MSG: Speech started");
+    }
+  },
+  onSpeechStopped: () => {
+    if (!isListenerMode.value) {
+      return;
+    }
+    console.log("MSG: Speech stopped");
+    const timeSinceLastStart = lastSpeechStartedTime.value
+      ? Date.now() - lastSpeechStartedTime.value
+      : 0;
+
+    if (timeSinceLastStart > LISTENER_MODE_SPEECH_THRESHOLD_MS) {
+      console.log("MSG: Speech stopped for a long time");
+      setLocalAudioEnabled(false);
+      setTimeout(() => {
+        setMute(isMuted.value);
+        lastSpeechStartedTime.value = Date.now();
+      }, LISTENER_MODE_AUDIO_GAP_MS);
+    }
+  },
+  onError: (error) => {
+    console.error("Session error", error);
+  },
+});
+
+watch(
+  () => sidebarRef.value?.audioEl ?? null,
+  (audioEl) => {
+    attachRemoteAudioElement(audioEl);
+  },
+  { immediate: true },
+);
 
 const sleep = async (milliseconds: number) => {
   return await new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -221,15 +288,7 @@ async function processToolCall(
     const promise = toolExecute(context, msg.name, args);
     const waitingMessage = getToolPlugin(msg.name)?.waitingMessage;
     if (waitingMessage) {
-      webrtc.dc?.send(
-        JSON.stringify({
-          type: "response.create",
-          response: {
-            instructions: waitingMessage,
-            // e.g., the model might say: "Your image is ready."
-          },
-        }),
-      );
+      sendInstructions(waitingMessage);
     }
 
     const result = await promise;
@@ -263,16 +322,7 @@ async function processToolCall(
       data: result.jsonData,
     };
     console.log(`RES:${result.toolName}\n`, outputPayload);
-    webrtc.dc?.send(
-      JSON.stringify({
-        type: "conversation.item.create",
-        item: {
-          type: "function_call_output",
-          call_id: msg.call_id,
-          output: JSON.stringify(outputPayload),
-        },
-      }),
-    );
+    sendFunctionCallOutput(msg.call_id, JSON.stringify(outputPayload));
     if (
       result.instructions &&
       (!suppressInstructions.value || result.instructionsRequired)
@@ -282,29 +332,17 @@ async function processToolCall(
         await sleep(delay);
       }
       console.log(`INS:${result.toolName}\n${result.instructions}`);
-      webrtc.dc?.send(
-        JSON.stringify({
-          type: "response.create",
-          response: {
-            instructions: result.instructions,
-          },
-        }),
-      );
+      sendInstructions(result.instructions);
     }
   } catch (e) {
     console.error("Failed to parse function call arguments", e);
-    processedToolCalls.delete(id);
     // Let the model know that we failed to parse the function call arguments.
-    webrtc.dc?.send(
-      JSON.stringify({
-        type: "conversation.item.create",
-        item: {
-          type: "function_call_output",
-          call_id: msg.call_id,
-          output: `Failed to parse function call arguments: ${e}`,
-        },
-      }),
-    );
+    if (msg.call_id) {
+      sendFunctionCallOutput(
+        msg.call_id,
+        `Failed to parse function call arguments: ${e}`,
+      );
+    }
     // We don't need to send "response.create" here.
   } finally {
     isGeneratingImage.value = false;
@@ -312,202 +350,12 @@ async function processToolCall(
   }
 }
 
-// NOTE: This must be a sync function. Otherwise, we may call the same tool multiple times.
-function messageHandler(event: MessageEvent): void {
-  const msg = JSON.parse(event.data);
-  const id = msg.id || msg.call_id;
-
-  switch (msg.type) {
-    case "error":
-      console.error("Error", msg.error);
-      break;
-
-    case "response.text.delta":
-      currentText.value += msg.delta;
-      break;
-
-    case "response.completed":
-      if (currentText.value.trim()) {
-        messages.value.push(currentText.value);
-      }
-      currentText.value = "";
-      break;
-
-    case "response.function_call_arguments.delta":
-      pendingToolArgs[id] = (pendingToolArgs[id] || "") + msg.delta;
-      break;
-
-    case "response.function_call_arguments.done": {
-      const argStr = pendingToolArgs[id] || msg.arguments || "";
-      delete pendingToolArgs[id];
-      if (msg.truncated) {
-        console.warn(
-          `******* Abandoning truncated tool call for ${msg.name || msg.call_id}`,
-        );
-        processedToolCalls.delete(id);
-        break;
-      }
-      const previousArgs = processedToolCalls.get(id);
-      if (previousArgs === argStr) {
-        console.warn(
-          `******* Skipping duplicate tool call for ${msg.name || msg.call_id}`,
-        );
-        break;
-      }
-      console.log(`MSG: toolcall\n${argStr}`);
-      processedToolCalls.set(id, argStr);
-      processToolCall(msg, id, argStr);
-      break;
-    }
-    case "response.created":
-      conversationActive.value = true;
-      break;
-    case "response.done":
-      conversationActive.value = false;
-      break;
-    case "input_audio_buffer.speech_started":
-      if (isListenerMode.value) {
-        console.log("MSG: Speech started");
-      }
-      break;
-    case "input_audio_buffer.speech_stopped":
-      if (isListenerMode.value) {
-        console.log("MSG: Speech stopped");
-        // Only execute the gap logic if more than 10 seconds has passed since the last speech_started
-        const timeSinceLastStart = lastSpeechStartedTime.value
-          ? Date.now() - lastSpeechStartedTime.value
-          : 0;
-
-        if (timeSinceLastStart > LISTENER_MODE_SPEECH_THRESHOLD_MS) {
-          console.log("MSG: Speech stopped for a long time");
-          // When the speech is stopped for a long time, we intentionally create a large gap so that the server thinks the user has paused.
-          // We may miss a few words, but it's better than having the server think the user is still speaking.
-          const audioTracks = webrtc.localStream?.getAudioTracks();
-          if (audioTracks) {
-            audioTracks.forEach((track) => {
-              track.enabled = false;
-            });
-          }
-          setTimeout(() => {
-            setMute(isMuted.value);
-            lastSpeechStartedTime.value = Date.now();
-          }, LISTENER_MODE_AUDIO_GAP_MS);
-        }
-      }
-      break;
-  }
-}
-
 async function startChat(): Promise<void> {
   // Gard against double start
   if (chatActive.value || connecting.value) return;
 
-  connecting.value = true;
   lastSpeechStartedTime.value = Date.now();
-
-  // Call the start API endpoint to get ephemeral key
-  try {
-    const response = await fetch("/api/start", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`API error: ${response.statusText}`);
-    }
-
-    startResponse.value = await response.json();
-
-    if (!startResponse.value?.ephemeralKey) {
-      throw new Error("No ephemeral key received from server");
-    }
-  } catch (err) {
-    console.error("Failed to get ephemeral key:", err);
-    alert("Failed to start session. Check console for details.");
-    connecting.value = false;
-    return;
-  }
-
-  try {
-    webrtc.pc = new RTCPeerConnection();
-
-    // Data channel for model events
-    const dc = webrtc.pc.createDataChannel("oai-events");
-    webrtc.dc = dc;
-    dc.addEventListener("open", () => {
-      const selectedPrompt = getSystemPrompt(systemPromptId.value);
-      const pluginPrompts = selectedPrompt.includePluginPrompts
-        ? getPluginSystemPrompts(startResponse.value, enabledPlugins.value)
-        : "";
-      const customInstructionsText = customInstructions.value.trim()
-        ? ` ${customInstructions.value}`
-        : "";
-      const instructions = `${selectedPrompt.prompt}${pluginPrompts}${customInstructionsText} The user's native language is ${getLanguageName(userLanguage.value)}.`;
-
-      dc.send(
-        JSON.stringify({
-          type: "session.update",
-          session: {
-            type: "realtime",
-            model: "gpt-realtime",
-            instructions,
-            audio: {
-              output: {
-                voice: "shimmer",
-              },
-            },
-            tools: pluginTools(startResponse.value, enabledPlugins.value),
-          },
-        }),
-      );
-    });
-    dc.addEventListener("message", messageHandler);
-    dc.addEventListener("close", () => {
-      webrtc.dc = null;
-    });
-
-    // Play remote audio
-    webrtc.remoteStream = new MediaStream();
-    webrtc.pc.ontrack = (event) => {
-      webrtc.remoteStream.addTrack(event.track);
-    };
-    if (sidebarRef.value?.audioEl) {
-      sidebarRef.value.audioEl.srcObject = webrtc.remoteStream;
-    }
-
-    // Send microphone audio
-    webrtc.localStream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-    });
-    webrtc.localStream
-      .getTracks()
-      .forEach((track) => webrtc.pc.addTrack(track, webrtc.localStream));
-
-    // Create and send offer SDP
-    const offer = await webrtc.pc.createOffer();
-    await webrtc.pc.setLocalDescription(offer);
-
-    const response = await fetch("https://api.openai.com/v1/realtime/calls", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${startResponse.value.ephemeralKey}`,
-        "Content-Type": "application/sdp",
-      },
-      body: offer.sdp,
-    });
-    const responseText = await response.text();
-
-    await webrtc.pc.setRemoteDescription({ type: "answer", sdp: responseText });
-    chatActive.value = true;
-  } catch (err) {
-    console.error(err);
-    stopChat();
-    alert("Failed to start voice chat. Check console for details.");
-  } finally {
-    connecting.value = false;
-  }
+  await startRealtimeChat();
 }
 
 async function sendTextMessage(providedText?: string): Promise<void> {
@@ -520,36 +368,10 @@ async function sendTextMessage(providedText?: string): Promise<void> {
     await sleep(1000);
   }
 
-  const dc = webrtc.dc;
-  if (!chatActive.value || !dc || dc.readyState !== "open") {
-    console.warn(
-      "Cannot send text message because the data channel is not ready.",
-    );
+  const sent = await sendUserMessageInternal(text);
+  if (!sent) {
     return;
   }
-
-  console.log(`MSG:\n`, text);
-  dc.send(
-    JSON.stringify({
-      type: "conversation.item.create",
-      item: {
-        type: "message",
-        role: "user",
-        content: [
-          {
-            type: "input_text",
-            text,
-          },
-        ],
-      },
-    }),
-  );
-  dc.send(
-    JSON.stringify({
-      type: "response.create",
-      response: {},
-    }),
-  );
 
   messages.value.push(`You: ${text}`);
   if (!providedText) {
@@ -589,21 +411,14 @@ async function handleUploadFiles(results: ToolResult[]): Promise<void> {
 
     // Send uploadMessage to LLM if available
     const plugin = getToolPlugin(result.toolName);
-    if (plugin?.uploadMessage && webrtc.dc?.readyState === "open") {
+    if (plugin?.uploadMessage && isDataChannelOpen()) {
       // Wait for conversation to be active (up to 5 seconds)
       for (let i = 0; i < 5 && conversationActive.value; i++) {
         console.log(`WAIT:${i} \n`, plugin.uploadMessage);
         await sleep(1000);
       }
       console.log(`UPL:${result.toolName}\n${plugin.uploadMessage}`);
-      webrtc.dc.send(
-        JSON.stringify({
-          type: "response.create",
-          response: {
-            instructions: plugin.uploadMessage,
-          },
-        }),
-      );
+      sendInstructions(plugin.uploadMessage);
     }
   }
 
@@ -612,37 +427,11 @@ async function handleUploadFiles(results: ToolResult[]): Promise<void> {
 }
 
 function stopChat(): void {
-  if (webrtc.pc) {
-    webrtc.pc.close();
-    webrtc.pc = null;
-  }
-  if (webrtc.dc) {
-    webrtc.dc.close();
-    webrtc.dc = null;
-  }
-  if (webrtc.localStream) {
-    webrtc.localStream.getTracks().forEach((track) => track.stop());
-    webrtc.localStream = null;
-  }
-  if (webrtc.remoteStream) {
-    webrtc.remoteStream.getTracks().forEach((track) => track.stop());
-    webrtc.remoteStream = null;
-  }
-  if (sidebarRef.value?.audioEl) {
-    sidebarRef.value.audioEl.srcObject = null;
-  }
-  chatActive.value = false;
-  isMuted.value = false;
+  stopRealtimeChat();
 }
 
 function setMute(muted: boolean): void {
-  isMuted.value = muted;
-  if (webrtc.localStream) {
-    const audioTracks = webrtc.localStream.getAudioTracks();
-    audioTracks.forEach((track) => {
-      track.enabled = !muted;
-    });
-  }
+  sessionSetMute(muted);
 }
 
 async function switchMode(newSystemPromptId: string): Promise<void> {
