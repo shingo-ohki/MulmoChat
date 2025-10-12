@@ -18,7 +18,7 @@
             <span
               class="material-icons text-2xl text-blue-600 transition-transform"
               :class="{ 'animate-spin': isConversationActive }"
-              >star</span
+              >{{ getModeIcon() }}</span
             >
           </div>
           <button
@@ -153,24 +153,31 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">
               System Prompt
             </label>
-            <select
-              :value="systemPromptId"
-              @change="
-                $emit(
-                  'update:systemPromptId',
-                  ($event.target as HTMLSelectElement).value,
-                )
-              "
-              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option
-                v-for="prompt in SYSTEM_PROMPTS"
-                :key="prompt.id"
-                :value="prompt.id"
+            <div class="relative">
+              <span
+                class="material-icons absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-600 pointer-events-none"
               >
-                {{ prompt.name }}
-              </option>
-            </select>
+                {{ getModeIcon() }}
+              </span>
+              <select
+                :value="systemPromptId"
+                @change="
+                  $emit(
+                    'update:systemPromptId',
+                    ($event.target as HTMLSelectElement).value,
+                  )
+                "
+                class="w-full border rounded pl-10 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option
+                  v-for="prompt in SYSTEM_PROMPTS"
+                  :key="prompt.id"
+                  :value="prompt.id"
+                >
+                  {{ prompt.name }}
+                </option>
+              </select>
+            </div>
           </div>
 
           <div>
@@ -365,6 +372,18 @@ function handleFileUpload(event: Event): void {
 function handlePluginToggle(pluginName: string, enabled: boolean): void {
   const updated = { ...props.enabledPlugins, [pluginName]: enabled };
   emit("update:enabledPlugins", updated);
+}
+
+function getModeIcon(): string {
+  switch (props.systemPromptId) {
+    case "tutor":
+      return "school";
+    case "listener":
+      return "hearing";
+    case "general":
+    default:
+      return "star";
+  }
 }
 
 defineExpose({
