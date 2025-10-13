@@ -9,7 +9,7 @@
 
 ## Abstract
 
-This paper presents a technical architecture that fundamentally eliminates the "sea of app icons" problem by making **natural language conversation** the primary interface. A Large Language Model (LLM) orchestrates a plugin ecosystem, understanding user intent and invoking appropriate tools through function calling. The key innovation is extending the traditional function calling mechanism to support **multi-modal interaction**: plugins return not only data to the LLM, but also graphical interface components that provide rich visual feedback to users. This dual-channel approach combines the natural interaction of conversation with the power of visual interfaces, allowing users to express what they want to accomplish rather than learning how to navigate discrete applications.
+This paper presents a technical architecture that reframes human-computer interaction as a **human-AI partnership**. Rather than simply replacing static app icons with a conversational layer, we make **natural language conversation** and **intent expression** the primary interface. A Large Language Model (LLM) orchestrates a plugin ecosystem, understanding user intent and invoking appropriate tools through function calling. The key innovation is extending the traditional function calling mechanism (and contemporary MCP-style protocols) to support **multi-modal interaction**: plugins return not only data to the LLM, but also graphical interface components that provide rich visual feedback to users. This dual-channel approach combines the natural interaction of conversation with the power of visual interfaces, allowing users to collaborate with AI systems that surface the right GUI affordances on demand instead of forcing them to operate discrete applications.
 
 ## 1. Introduction
 
@@ -27,11 +27,13 @@ Modern operating systems present users with an overwhelming array of application
 
 We propose an alternative: an AI-native operating system where users express **intent** rather than selecting **applications**. The system translates natural language commands into orchestrated sequences of function calls, presenting results through dynamic, context-appropriate visual interfaces.
 
+Crucially, this architecture positions the LLM as the mediator between humans and computational capabilities. The AI interprets context, negotiates task boundaries, and manifests GUI elements only when they provide clear value—transforming the interface problem from "which app should I open?" into a dialog about goals, constraints, and outcomes.
+
 ## 2. Architectural Overview
 
 ### 2.1 LLM-MVC Pattern
 
-Our architecture implements a Model-View-Controller pattern with a critical innovation: **the LLM serves as the Controller**.
+Our architecture implements a Model-View-Controller pattern with two critical innovations: **the LLM serves as the Controller**, and **the function-calling layer natively supports multi-modal, GUI-capable responses**.
 
 ```
 User (Natural Language)
@@ -93,6 +95,12 @@ interface ToolResult {
 ```
 
 This dual-channel return type enables both **conversational feedback** (message, jsonData) and **visual feedback** (data, viewState, viewComponent).
+
+### 2.3 Extending Function Calling Beyond MCP
+
+Existing function-calling APIs—including the Model Context Protocol (MCP) and OpenAI's canonical schema—were designed around pure data exchange. They excel at transactional interactions ("fetch data", "transform text"), but they stop short of specifying how results should be rendered or how a user can continue the interaction through a GUI.
+
+MulmoChat introduces an extended contract where every tool (1) returns conversational updates for the LLM, (2) exposes structured data for downstream reasoning, and (3) carries **view descriptors** that the client renders in real time. This approach effectively couples intent interpretation with GUI synthesis: the LLM remains in control of the workflow while the human enjoys contextual UI components that can adapt, update, and even accept direct input, all without abandoning the conversational loop.
 
 ## 3. Eliminating the App Icon Paradigm
 
@@ -532,7 +540,7 @@ Computing becomes as accessible as conversation.
 
 ## 11. Conclusion
 
-The "sea of app icons" represents a fundamental mismatch between how humans think (intent-based, task-oriented) and how computers present functionality (app-based, tool-oriented). By placing an LLM as the controller in an MVC architecture, we resolve this mismatch.
+The "sea of app icons" represents a fundamental mismatch between how humans think (intent-based, task-oriented) and how computers present functionality (app-based, tool-oriented). By placing an LLM as the controller in an MVC architecture—and by extending the function-calling substrate to produce rich GUI experiences—we recast the OS as a human-AI interface rather than a collection of isolated applications.
 
 Users express **what they want**, not **how to get it**. The system translates intent into orchestrated plugin executions, presenting results through dynamic visual interfaces. This eliminates:
 
