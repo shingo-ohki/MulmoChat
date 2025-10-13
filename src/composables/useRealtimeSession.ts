@@ -4,6 +4,7 @@ import { ref, shallowRef } from "vue";
 import type { StartApiResponse } from "../../server/types";
 import type { BuildContext, ToolCallMessage } from "./types";
 import { isValidToolCallMessage } from "./types";
+import { DEFAULT_REALTIME_MODEL_ID } from "../config/models";
 
 type BrowserRTCPeerConnection = globalThis.RTCPeerConnection;
 type BrowserRTCDataChannel = globalThis.RTCDataChannel;
@@ -26,6 +27,7 @@ export interface RealtimeSessionOptions {
   buildInstructions: (context: BuildContext) => string;
   buildTools: (context: BuildContext) => unknown[];
   handlers?: RealtimeSessionEventHandlers;
+  getModelId?: (context: BuildContext) => string;
 }
 
 export interface UseRealtimeSessionReturn {
@@ -263,6 +265,10 @@ export function useRealtimeSession(
         const instructions = options.buildInstructions({
           startResponse: startResponse.value,
         });
+        const modelId =
+          options.getModelId?.({
+            startResponse: startResponse.value,
+          }) ?? DEFAULT_REALTIME_MODEL_ID;
         console.log(`INSTRUCTIONS:\n${instructions}`);
         const tools = options.buildTools({
           startResponse: startResponse.value,
@@ -271,7 +277,7 @@ export function useRealtimeSession(
           type: "session.update",
           session: {
             type: "realtime",
-            model: "gpt-realtime",
+            model: modelId,
             instructions,
             audio: {
               output: {

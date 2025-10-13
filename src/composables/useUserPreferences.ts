@@ -7,6 +7,7 @@ import {
   getSystemPrompt,
 } from "../config/systemPrompts";
 import { pluginTools, getPluginSystemPrompts } from "../tools";
+import { DEFAULT_REALTIME_MODEL_ID } from "../config/models";
 import type { BuildContext } from "./types";
 
 const USER_LANGUAGE_KEY = "user_language_v1";
@@ -14,6 +15,7 @@ const SUPPRESS_INSTRUCTIONS_KEY = "suppress_instructions_v1";
 const SYSTEM_PROMPT_ID_KEY = "system_prompt_id_v1";
 const ENABLED_PLUGINS_KEY = "enabled_plugins_v1";
 const CUSTOM_INSTRUCTIONS_KEY = "custom_instructions_v1";
+const MODEL_ID_KEY = "model_id_v1";
 
 interface StorageLike {
   getItem(key: string): string | null;
@@ -46,6 +48,7 @@ export interface UserPreferencesState {
   systemPromptId: string;
   customInstructions: string;
   enabledPlugins: Record<string, boolean>;
+  modelId: string;
 }
 
 export interface UseUserPreferencesReturn {
@@ -72,6 +75,7 @@ export function useUserPreferences(): UseUserPreferencesReturn {
       getStoredValue(SYSTEM_PROMPT_ID_KEY) || DEFAULT_SYSTEM_PROMPT_ID,
     customInstructions: getStoredValue(CUSTOM_INSTRUCTIONS_KEY) || "",
     enabledPlugins: initEnabledPlugins(),
+    modelId: getStoredValue(MODEL_ID_KEY) || DEFAULT_REALTIME_MODEL_ID,
   });
 
   watch(
@@ -99,6 +103,13 @@ export function useUserPreferences(): UseUserPreferencesReturn {
     () => state.customInstructions,
     (val) => {
       setStoredValue(CUSTOM_INSTRUCTIONS_KEY, val);
+    },
+  );
+
+  watch(
+    () => state.modelId,
+    (val) => {
+      setStoredValue(MODEL_ID_KEY, val);
     },
   );
 
