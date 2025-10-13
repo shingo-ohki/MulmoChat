@@ -151,6 +151,33 @@
         <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
+              Realtime Model
+            </label>
+            <select
+              :value="modelId"
+              @change="
+                $emit(
+                  'update:modelId',
+                  ($event.target as HTMLSelectElement).value,
+                )
+              "
+              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option
+                v-for="model in REALTIME_MODELS"
+                :key="model.id"
+                :value="model.id"
+              >
+                {{ model.label }}
+              </option>
+            </select>
+            <p class="text-xs text-gray-500 mt-1">
+              Chooses the OpenAI realtime model used when connecting.
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
               System Prompt
             </label>
             <div class="relative">
@@ -299,6 +326,7 @@ import {
 } from "../tools";
 import { LANGUAGES } from "../config/languages";
 import { SYSTEM_PROMPTS } from "../config/systemPrompts";
+import { REALTIME_MODELS } from "../config/models";
 
 const props = defineProps<{
   chatActive: boolean;
@@ -315,6 +343,7 @@ const props = defineProps<{
   isConversationActive: boolean;
   enabledPlugins: Record<string, boolean>;
   customInstructions: string;
+  modelId: string;
 }>();
 
 const emit = defineEmits<{
@@ -329,6 +358,7 @@ const emit = defineEmits<{
   "update:systemPromptId": [value: string];
   "update:enabledPlugins": [value: Record<string, boolean>];
   "update:customInstructions": [value: string];
+  "update:modelId": [value: string];
   uploadFiles: [results: ToolResult[]];
 }>();
 

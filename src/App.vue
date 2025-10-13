@@ -27,6 +27,7 @@
         :is-conversation-active="conversationActive"
         :enabled-plugins="userPreferences.enabledPlugins"
         :custom-instructions="userPreferences.customInstructions"
+        :model-id="userPreferences.modelId"
         @start-chat="startChat"
         @stop-chat="stopChat"
         @set-mute="setMute"
@@ -42,6 +43,7 @@
         @update:custom-instructions="
           userPreferences.customInstructions = $event
         "
+        @update:model-id="userPreferences.modelId = $event"
         @upload-files="handleUploadFiles"
       />
 
@@ -106,6 +108,7 @@ const scrolling = useScrolling({
 const session = useRealtimeSession({
   buildInstructions: (context) => buildPreferenceInstructions(context),
   buildTools: (context) => buildPreferenceTools(context),
+  getModelId: () => userPreferences.modelId,
 });
 
 const {
