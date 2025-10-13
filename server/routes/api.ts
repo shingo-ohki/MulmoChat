@@ -7,6 +7,7 @@ import { exaSearch, hasExaApiKey } from "../exaSearch";
 import movieRouter from "./movie";
 import pdfRouter from "./pdf";
 import htmlRouter from "./html";
+import textRouter from "./textLLM";
 dotenv.config();
 
 const router: Router = express.Router();
@@ -19,6 +20,9 @@ router.use(pdfRouter);
 
 // Mount HTML routes
 router.use(htmlRouter);
+
+// Mount text LLM routes
+router.use(textRouter);
 
 // Session start endpoint
 router.get("/start", async (req: Request, res: Response): Promise<void> => {

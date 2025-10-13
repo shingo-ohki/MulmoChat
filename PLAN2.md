@@ -7,7 +7,7 @@ Enable MulmoChat to switch between the existing GPT Realtime voice experience an
 - Voice sessions rely on `/api/start` to mint an OpenAI Realtime ephemeral key and then stream audio/text via WebRTC (`useRealtimeSession`).
 - Outgoing messages and tool traffic ride over the Realtime data channel; the client assumes audio streams exist.
 - Tool execution is decoupled (`useToolResults`) and should stay agnostic to the transport, provided we can deliver tool call arguments and capture tool outputs.
-- Server currently has no text completion proxy endpoints; everything funnels through the Realtime flow.
+- **Update:** The server now exposes consolidated text-generation endpoints (`GET /api/text/providers`, `POST /api/text/generate`) that proxy OpenAI, Anthropic, Google Gemini, and Ollama behind a shared contract, with quick verification scripts under `server/tests/`.
 
 ## Development Phases
 
@@ -21,10 +21,10 @@ Enable MulmoChat to switch between the existing GPT Realtime voice experience an
 - Define a minimal session contract (start/stop, sendUserMessage, emitTextDelta/Completed, emitToolCall, sendToolOutput) that both adapters implement so the rest of the app can swap seamlessly.
 - Gate audio controls (mute, remote audio attachment) behind the voice adapter; provide no-op implementations for text mode.
 
-### Phase 3 – Server Text Proxy Endpoints
-- Add `/api/text-session/start` to issue any model-specific credentials (e.g., forward OpenAI API key, confirm Anthropic key) and respond with feature flags.
-- Implement `/api/text-session/message` that accepts the accumulated conversation, calls the chosen provider (`responses` for OpenAI, `messages` for Anthropic), streams deltas back via SSE or chunked JSON, and normalizes function/tool calls into the existing `ToolCallMessage` shape.
-- Consolidate provider-specific logic in a service layer with reusable throttling/retry helpers and consistent error reporting.
+### Phase 3 – Server Text Proxy Endpoints _(Completed)_
+- ✅ Added unified text routes (`GET /api/text/providers`, `POST /api/text/generate`) that validate payloads and surface provider availability metadata.
+- ✅ Implemented provider adapters for OpenAI chat completions, Anthropic Messages, Google Gemini (`gemini-2.5-*`), and Ollama (`gpt-oss:20b` default) with normalized usage reporting and error handling.
+- ✅ Documented the API surface and environment variables in `README.md`, plus shipped CLI smoketests (`server/tests/test-text-*.ts`).
 
 ### Phase 4 – Client Text Session Hook
 - Build `useTextSession` to call the new REST endpoints, maintain conversation state, emit deltas, and surface tool call events to `useToolResults`.
@@ -42,9 +42,9 @@ Enable MulmoChat to switch between the existing GPT Realtime voice experience an
 - Add safeguards for token budgeting (truncate history, surface “context trimmed” warnings) since text models will likely rely on turn-based context windows.
 
 ### Phase 7 – Testing & Hardening
-- Set up mocked provider clients (via MSW or node interceptors) so we can exercise both adapters without live API keys.
-- Add integration smoke scripts: one for voice (existing) and one that spins a text session, sends a tool-enabled prompt, and validates the UI updates.
-- Document environment variable expectations in README (new `ANTHROPIC_API_KEY`, optional custom model IDs) and capture manual test steps.
+- Set up mocked provider clients (via MSW or node interceptors) so we can exercise both adapters without live API keys. _(TODO)_
+- Add integration smoke scripts: one for voice (existing) and one that spins a text session, sends a tool-enabled prompt, and validates the UI updates. _(Server-side CLI scripts shipped; UI automation still pending)_
+- Document environment variable expectations in README (new `ANTHROPIC_API_KEY`, optional custom model IDs) and capture manual test steps. _(Completed)_
 
 ## Risks & Mitigations
 - **Streaming mismatch**: Providers differ in streaming formats. Mitigate by normalizing server responses into a shared SSE schema consumed by the client.
@@ -53,9 +53,9 @@ Enable MulmoChat to switch between the existing GPT Realtime voice experience an
 - **Audio/UX regressions**: Ensure voice adapter remains untouched by guarding new code behind feature flags and re-running the audio handshake tests.
 
 ## Deliverables Checklist
-- [ ] Configurable model registry with provider metadata.
+- [ ] Configurable text-model registry surfaced to the client (current realtime selector only covers voice models).
 - [ ] Dual transport session hooks (`useVoiceRealtimeSession`, `useTextSession`).
-- [ ] New server endpoints proxying text models with normalized streaming.
+- [x] New server endpoints proxying text models with normalized responses.
 - [ ] Updated UI for model selection and mode-aware controls.
-- [ ] Tests/mocks covering tool-call translation and session switching.
-- [ ] Documentation updates (README, settings instructions).
+- [ ] End-to-end tests or mocks covering tool-call translation and session switching (CLI smoke scripts exist; automated coverage pending).
+- [x] Documentation updates (README, verification scripts, env vars).
