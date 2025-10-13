@@ -16,10 +16,10 @@ Enable MulmoChat to switch between the existing GPT Realtime voice experience an
 - Extend `useUserPreferences` (and persisted state) to represent a `modelKind` (`realtime-voice` vs `text-only`) and selected `modelId`.
 - Update `/api/start` to return the advertised model catalogue so the client can render available options without another round trip.
 
-### Phase 2 – Transport Abstraction
-- Split the current `useRealtimeSession` into a transport-agnostic interface plus two concrete adapters: `useVoiceRealtimeSession` (existing WebRTC flow) and a new `useTextSession` that talks to RESTful completion endpoints.
-- Define a minimal session contract (start/stop, sendUserMessage, emitTextDelta/Completed, emitToolCall, sendToolOutput) that both adapters implement so the rest of the app can swap seamlessly.
-- Gate audio controls (mute, remote audio attachment) behind the voice adapter; provide no-op implementations for text mode.
+### Phase 2 – Transport Abstraction _(In Progress)_
+- ✅ Added `useSessionTransport` wrapper that augments the existing realtime hook with transport metadata/capabilities and centralizes future switching logic.
+- ☐ Extract the WebRTC implementation into a dedicated voice adapter and introduce a REST-based `useTextSession` that conforms to the shared contract.
+- ☐ Expand the abstraction to dynamically instantiate transports based on user preferences (voice vs text) and fall back gracefully when audio is unavailable.
 
 ### Phase 3 – Server Text Proxy Endpoints _(Completed)_
 - ✅ Added unified text routes (`GET /api/text/providers`, `POST /api/text/generate`) that validate payloads and surface provider availability metadata.

@@ -79,7 +79,7 @@
 import { ref, computed, watch } from "vue";
 import { toolExecute, getToolPlugin } from "./tools";
 import Sidebar from "./components/Sidebar.vue";
-import { useRealtimeSession } from "./composables/useRealtimeSession";
+import { useSessionTransport } from "./composables/useSessionTransport";
 import { useUserPreferences } from "./composables/useUserPreferences";
 import { useToolResults } from "./composables/useToolResults";
 import { useScrolling } from "./composables/useScrolling";
@@ -105,7 +105,8 @@ const scrolling = useScrolling({
   sidebarRef: () => sidebarRef.value,
 });
 
-const session = useRealtimeSession({
+const session = useSessionTransport({
+  transportKind: computed(() => "voice-realtime"),
   buildInstructions: (context) => buildPreferenceInstructions(context),
   buildTools: (context) => buildPreferenceTools(context),
   getModelId: () => userPreferences.modelId,
@@ -127,7 +128,15 @@ const {
   setLocalAudioEnabled,
   attachRemoteAudioElement,
   registerEventHandlers,
+  capabilities,
 } = session;
+
+const supportsAudioInput = computed(
+  () => capabilities.value.supportsAudioInput,
+);
+const supportsAudioOutput = computed(
+  () => capabilities.value.supportsAudioOutput,
+);
 
 const {
   toolResults,
@@ -198,7 +207,8 @@ registerEventHandlers({
 });
 
 watch(
-  () => sidebarRef.value?.audioEl ?? null,
+  () =>
+    supportsAudioOutput.value ? sidebarRef.value?.audioEl ?? null : null,
   (audioEl) => {
     attachRemoteAudioElement(audioEl);
   },
@@ -209,7 +219,9 @@ async function startChat(): Promise<void> {
   // Gard against double start
   if (chatActive.value || connecting.value) return;
 
-  lastSpeechStartedTime.value = Date.now();
+  if (supportsAudioInput.value) {
+    lastSpeechStartedTime.value = Date.now();
+  }
   await startRealtimeChat();
 }
 
@@ -243,6 +255,9 @@ function stopChat(): void {
 }
 
 function setMute(muted: boolean): void {
+  if (!supportsAudioInput.value) {
+    return;
+  }
   sessionSetMute(muted);
 }
 
