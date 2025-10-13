@@ -9,7 +9,7 @@
 
 ## Abstract
 
-This paper presents a technical architecture that reframes human-computer interaction as a **human-AI partnership**. Rather than simply replacing static app icons with a conversational layer, we make **natural language conversation** and **intent expression** the primary interface. A Large Language Model (LLM) orchestrates a plugin ecosystem, understanding user intent and invoking appropriate tools through function calling. The key innovation is extending the traditional function calling mechanism (and contemporary MCP-style protocols) to support **multi-modal interaction**: plugins return not only data to the LLM, but also graphical interface components that provide rich visual feedback to users. This dual-channel approach combines the natural interaction of conversation with the power of visual interfaces, allowing users to collaborate with AI systems that surface the right GUI affordances on demand instead of forcing them to operate discrete applications.
+This paper presents a technical architecture that reframes human-computer interaction as a **human-AI partnership**, proposing a shift from traditional **Man-Machine Interfaces** to **Man-Machine-AI Interfaces**. Rather than simply replacing static app icons with a conversational layer, we make **natural language conversation** and **intent expression** the primary interface. A Large Language Model (LLM) orchestrates a plugin ecosystem, understanding user intent and invoking appropriate tools through function calling. The key innovation is extending the traditional function calling mechanism (and contemporary MCP-style protocols) to support **multi-modal interaction**: plugins return not only data to the LLM, but also graphical interface components that provide rich visual feedback to users. This dual-channel approach combines the natural interaction of conversation with the power of visual interfaces, allowing users to collaborate with AI systems that surface the right GUI affordances on demand instead of forcing them to operate discrete applications. In this triadic architecture, the AI serves as an intelligent intermediary—the "driver"—between human intent and machine execution.
 
 ## 1. Introduction
 
@@ -23,11 +23,21 @@ Modern operating systems present users with an overwhelming array of application
 4. **Decision Fatigue**: Choosing the right app for a task imposes cognitive overhead
 5. **Fragmentation**: Related tasks often require multiple apps, breaking workflow continuity
 
-### 1.2 The Vision
+### 1.2 From Man-Machine to Man-Machine-AI Interfaces
 
-We propose an alternative: an AI-native operating system where users express **intent** rather than selecting **applications**. The system translates natural language commands into orchestrated sequences of function calls, presenting results through dynamic, context-appropriate visual interfaces.
+When we discuss UI/UX design, we traditionally use terms like **MMI (Man-Machine Interface)** or **HCI (Human-Computer Interaction)**—because historically, interaction meant something happening between a human and a machine.
+
+But in the age of AI-native systems, that definition feels incomplete.
+
+Consider modern software development: when coding in an IDE like Cursor alongside Claude Code—an AI pair programmer—the dynamic has fundamentally shifted. The developer gives instructions, the AI writes code, and the human reviews or edits. It's no longer just a person and their computer. It's a **three-way collaboration**: human, AI, and machine.
+
+This is analogous to riding in a taxi: you're not driving the car yourself, but giving instructions to the driver, who then operates the vehicle. (Of course, it would be quite surprising—and probably a safety concern—if the passenger suddenly grabbed the steering wheel!) The driver represents the AI—understanding natural language, translating intent into machine actions.
+
+**We propose this as a new paradigm**: an AI-native operating system where users express **intent** rather than selecting **applications**. The LLM acts as the intelligent intermediary—the "driver"—translating natural language commands into orchestrated sequences of function calls, presenting results through dynamic, context-appropriate visual interfaces.
 
 Crucially, this architecture positions the LLM as the mediator between humans and computational capabilities. The AI interprets context, negotiates task boundaries, and manifests GUI elements only when they provide clear value—transforming the interface problem from "which app should I open?" into a dialog about goals, constraints, and outcomes.
+
+This represents an evolution in our vocabulary: from **Man-Machine Interface** to **Man-Machine-AI Interface**—because in this new era, AI is not just a tool; it's the driver between intent and execution.
 
 ## 2. Architectural Overview
 
@@ -508,7 +518,51 @@ The LLM bridges intent to implementation through understanding, not keyword matc
 
 ## 10. Philosophical Implications
 
-### 10.1 From Tool Mastery to Intent Expression
+### 10.1 The Triadic Interface: Man-Machine-AI
+
+Designing AI-native systems requires a fundamentally different mindset than traditional interface design. We can no longer rely on the Man-Machine Interface (MMI) paradigm that has dominated computing for decades. We must design the entire system architecture and experience with the AI as an **active participant**, not a background feature.
+
+Consider the evolution of interface terminology:
+- **1960s-2010s: MMI/HCI** - Human ↔ Machine (direct manipulation)
+- **2010s-2020s: Voice Assistants** - Human → Voice Layer → Machine (simple command mapping)
+- **2025+: Man-Machine-AI Interface** - Human ↔ AI ↔ Machine (intelligent mediation)
+
+In MulmoChat, this triadic relationship manifests concretely:
+
+**Traditional MMI:**
+```
+User clicks → Application responds → User sees result
+```
+
+**Man-Machine-AI Interface:**
+```
+User speaks: "Show me Tesla stock"
+    ↓
+AI reasons: User wants financial data + visualization
+    ↓
+AI invokes: browse() plugin
+    ↓
+Machine executes: Web scraping, data extraction
+    ↓
+AI synthesizes: Conversational summary + chart selection
+    ↓
+User experiences: Voice explanation + visual chart
+    ↓
+User continues: "Compare to Ford" (AI has context)
+```
+
+The AI serves as an **intelligent intermediary** that:
+1. **Interprets** human intent from natural language
+2. **Translates** intent into machine operations
+3. **Orchestrates** multi-step workflows across plugins
+4. **Synthesizes** results into multi-modal presentations
+5. **Maintains** conversational context for continuity
+
+This is fundamentally different from voice assistants (which map utterances to fixed functions) or traditional GUIs (which require direct manipulation). The AI doesn't just execute commands—it **reasons** about goals, **composes** solutions, and **adapts** the interface to the task.
+
+Just as a passenger shouldn't grab the steering wheel from a taxi driver, users shouldn't need to manually orchestrate low-level operations. They express destination (intent), the AI drives (orchestrates), and the machine moves (executes).
+
+### 10.2 From Tool Mastery to Intent Expression
 
 Traditional computing requires users to become "tool masters"—experts in wielding specific applications. The LLM-OS model shifts the burden from user to system:
 
@@ -517,7 +571,7 @@ Traditional computing requires users to become "tool masters"—experts in wield
 
 This mirrors the evolution from command-line interfaces to GUIs—but goes further by eliminating the need to learn visual interfaces entirely.
 
-### 10.2 The Computer as Colleague
+### 10.3 The Computer as Colleague
 
 Rather than a collection of passive tools, the LLM-OS presents the computer as an intelligent colleague:
 - Understands natural language requests
@@ -528,7 +582,7 @@ Rather than a collection of passive tools, the LLM-OS presents the computer as a
 
 This transforms human-computer interaction from command-response to collaboration.
 
-### 10.3 Democratization of Computing
+### 10.4 Democratization of Computing
 
 By eliminating app-specific knowledge requirements, the LLM-OS makes computing truly universal:
 - Children can use advanced capabilities without reading menus
