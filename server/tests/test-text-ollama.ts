@@ -4,7 +4,7 @@ const BASE_URL = process.env.TEST_SERVER_URL ?? "http://localhost:3001";
 
 async function main(): Promise<void> {
   const prompt = process.argv[2] ?? "Describe how to set up a local LLM with Ollama.";
-  const model = process.env.OLLAMA_TEST_MODEL ?? "llama3";
+  const model = process.env.OLLAMA_TEST_MODEL ?? "gpt-oss:20b";
 
   const response = await fetch(`${BASE_URL}/api/text/generate`, {
     method: "POST",
