@@ -30,6 +30,7 @@ Enable MulmoChat to switch between the existing GPT Realtime voice experience an
 - Build `useTextSession` to call the new REST endpoints, maintain conversation state, emit deltas, and surface tool call events to `useToolResults`.
 - Reuse the current retry logic for message sends; ensure we queue `response.create` equivalents so tool calls still resolve through the same pathways.
 - Wire the composable selection in `App.vue` based on the chosen `modelKind`, and adjust UI affordances (disable audio recorder, rename controls to “Connect/Disconnect” where appropriate).
+- ✅ Created an internal `text-response` pseudo tool and corresponding preview/canvas components so assistant turns from a text transport can flow through the existing tool-results UI without exposing the helper to the LLM.
 
 ### Phase 5 – UI/UX Enhancements
 - Expose a model selector in `Sidebar.vue` (or a dedicated settings modal) that lists voice vs text models, shows availability badges (e.g., Claude requires configured key), and triggers the `switchMode` helper.
