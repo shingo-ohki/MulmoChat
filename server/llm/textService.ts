@@ -17,14 +17,14 @@ import {
 const DEFAULT_MODELS: Record<TextLLMProviderId, string> = {
   openai: "gpt-4o-mini",
   anthropic: "claude-3-5-sonnet-latest",
-  google: "gemini-1.5-flash",
+  google: "gemini-2.5-flash",
   ollama: "llama3",
 };
 
 const PROVIDER_MODEL_SUGGESTIONS: Partial<Record<TextLLMProviderId, string[]>> = {
   openai: ["gpt-4o", "gpt-4o-mini", "gpt-4.1-mini"],
   anthropic: ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"],
-  google: ["gemini-1.5-pro", "gemini-1.5-flash"],
+  google: ["gemini-2.5-pro", "gemini-2.5-flash"],
   ollama: ["llama3", "llama3.1", "phi3"],
 };
 

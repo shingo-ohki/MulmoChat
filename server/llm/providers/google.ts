@@ -27,6 +27,13 @@ function extractPrimaryText(candidates: unknown): string {
   return "";
 }
 
+function normalizeModelId(model: string): string {
+  if (model.startsWith("models/")) {
+    return model;
+  }
+  return `models/${model}`;
+}
+
 export async function generateWithGoogle(
   params: ProviderGenerateParams,
 ): Promise<TextGenerationResult> {
@@ -64,7 +71,7 @@ export async function generateWithGoogle(
   }
 
   const requestBody: Record<string, unknown> = {
-    model: params.model,
+    model: normalizeModelId(params.model),
     contents,
   };
 
@@ -75,7 +82,7 @@ export async function generateWithGoogle(
   const response = await ai.models.generateContent(requestBody as any);
 
   const text = extractPrimaryText(response.candidates) ?? "";
-  const usageMetadata = response.usageMetadata;
+  const usageMetadata = (response.response ?? response)?.usageMetadata;
   const usage = usageMetadata
     ? {
         inputTokens: usageMetadata.promptTokenCount ?? 0,
