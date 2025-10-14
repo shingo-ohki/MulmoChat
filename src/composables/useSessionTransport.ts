@@ -37,15 +37,19 @@ export function useSessionTransport(
   const session = useRealtimeSession(realtimeOptions);
 
   const capabilities = computed<SessionTransportCapabilities>(() => {
-    switch (transportKind.value) {
-      case "voice-realtime":
-      default:
-        return {
-          supportsAudioInput: true,
-          supportsAudioOutput: true,
-          supportsText: true,
-        };
+    if (transportKind.value === "voice-realtime") {
+      return {
+        supportsAudioInput: true,
+        supportsAudioOutput: true,
+        supportsText: true,
+      };
     }
+
+    return {
+      supportsAudioInput: true,
+      supportsAudioOutput: true,
+      supportsText: true,
+    };
   });
 
   return {

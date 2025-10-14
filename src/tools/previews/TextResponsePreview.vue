@@ -7,10 +7,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { ToolResultComplete } from "../types";
+import type { TextResponseData } from "../models/textResponse";
 
 const props = defineProps<{
-  result: ToolResultComplete<{ text: string }>;
+  result: ToolResultComplete<TextResponseData>;
 }>();
 
-const previewText = computed(() => props.result.content.text);
+const previewText = computed(() => props.result.data?.text ?? "");
 </script>

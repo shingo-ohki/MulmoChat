@@ -1,12 +1,14 @@
 import type { ToolPlugin } from "../types";
 
-interface TextResponseArgs {
+export interface TextResponseData {
   text: string;
   role?: "assistant" | "system" | "user";
   transportKind?: string;
 }
 
-export const plugin: ToolPlugin<TextResponseArgs, { text: string; role?: string; transportKind?: string }> = {
+type TextResponseArgs = TextResponseData;
+
+export const plugin: ToolPlugin<TextResponseData> = {
   toolDefinition: {
     name: "text-response",
     description: "Render plain text content from the assistant.",
@@ -24,7 +26,8 @@ export const plugin: ToolPlugin<TextResponseArgs, { text: string; role?: string;
         },
         transportKind: {
           type: "string",
-          description: "Identifier for the transport or provider that produced the message.",
+          description:
+            "Identifier for the transport or provider that produced the message.",
         },
       },
       required: ["text"],
@@ -35,8 +38,12 @@ export const plugin: ToolPlugin<TextResponseArgs, { text: string; role?: string;
   isEnabled: () => false,
   viewComponent: () => import("../views/TextResponseView.vue"),
   previewComponent: () => import("../previews/TextResponsePreview.vue"),
-  execute: async (_context, args) => ({
-    uuid: undefined,
-    content: args,
+  execute: async (_context, args: TextResponseArgs) => ({
+    data: {
+      text: args.text,
+      role: args.role,
+      transportKind: args.transportKind,
+    },
+    message: args.text,
   }),
 };

@@ -3,7 +3,8 @@ import "dotenv/config";
 const BASE_URL = process.env.TEST_SERVER_URL ?? "http://localhost:3001";
 
 async function main(): Promise<void> {
-  const prompt = process.argv[2] ?? "Summarize the benefits of structured tool calls.";
+  const prompt =
+    process.argv[2] ?? "Summarize the benefits of structured tool calls.";
   const model = process.env.ANTHROPIC_TEST_MODEL ?? "claude-3-5-sonnet-latest";
 
   if (!process.env.ANTHROPIC_API_KEY) {

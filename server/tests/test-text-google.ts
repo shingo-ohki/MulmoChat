@@ -3,7 +3,8 @@ import "dotenv/config";
 const BASE_URL = process.env.TEST_SERVER_URL ?? "http://localhost:3001";
 
 async function main(): Promise<void> {
-  const prompt = process.argv[2] ?? "List three creative use cases for realtime AI.";
+  const prompt =
+    process.argv[2] ?? "List three creative use cases for realtime AI.";
   const model = process.env.GEMINI_TEST_MODEL ?? "gemini-2.5-flash";
 
   if (!process.env.GEMINI_API_KEY) {

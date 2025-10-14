@@ -1,4 +1,8 @@
-import { TextGenerationError, type ProviderGenerateParams, type TextGenerationResult } from "../types";
+import {
+  TextGenerationError,
+  type ProviderGenerateParams,
+  type TextGenerationResult,
+} from "../types";
 
 interface OllamaChatResponse {
   message?: {
@@ -12,7 +16,9 @@ interface OllamaChatResponse {
 }
 
 function getOllamaBaseUrl(): string {
-  return process.env.OLLAMA_BASE_URL?.replace(/\/?$/, "") ?? "http://127.0.0.1:11434";
+  return (
+    process.env.OLLAMA_BASE_URL?.replace(/\/?$/, "") ?? "http://127.0.0.1:11434"
+  );
 }
 
 export async function generateWithOllama(

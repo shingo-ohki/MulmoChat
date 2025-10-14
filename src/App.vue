@@ -208,7 +208,7 @@ registerEventHandlers({
 
 watch(
   () =>
-    supportsAudioOutput.value ? sidebarRef.value?.audioEl ?? null : null,
+    supportsAudioOutput.value ? (sidebarRef.value?.audioEl ?? null) : null,
   (audioEl) => {
     attachRemoteAudioElement(audioEl);
   },

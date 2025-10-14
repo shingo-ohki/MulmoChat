@@ -1,6 +1,4 @@
-import {
-  generateWithAnthropic,
-} from "./providers/anthropic";
+import { generateWithAnthropic } from "./providers/anthropic";
 import { generateWithGoogle } from "./providers/google";
 import { generateWithOllama } from "./providers/ollama";
 import { generateWithOpenAI } from "./providers/openai";
@@ -21,12 +19,13 @@ const DEFAULT_MODELS: Record<TextLLMProviderId, string> = {
   ollama: "gpt-oss:20b",
 };
 
-const PROVIDER_MODEL_SUGGESTIONS: Partial<Record<TextLLMProviderId, string[]>> = {
-  openai: ["gpt-4o", "gpt-4o-mini", "gpt-4.1-mini"],
-  anthropic: ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"],
-  google: ["gemini-2.5-pro", "gemini-2.5-flash"],
-  ollama: ["gpt-oss:20b", "llama3", "llama3.1", "phi3"],
-};
+const PROVIDER_MODEL_SUGGESTIONS: Partial<Record<TextLLMProviderId, string[]>> =
+  {
+    openai: ["gpt-4o", "gpt-4o-mini", "gpt-4.1-mini"],
+    anthropic: ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"],
+    google: ["gemini-2.5-pro", "gemini-2.5-flash"],
+    ollama: ["gpt-oss:20b", "llama3", "llama3.1", "phi3"],
+  };
 
 function isSupportedRole(role: string): role is TextMessage["role"] {
   return role === "system" || role === "user" || role === "assistant";
@@ -39,10 +38,19 @@ function validateMessages(messages: TextMessage[]): void {
 
   for (const message of messages) {
     if (!isSupportedRole(message.role)) {
-      throw new TextGenerationError(`Unsupported message role: ${message.role}`, 400);
+      throw new TextGenerationError(
+        `Unsupported message role: ${message.role}`,
+        400,
+      );
     }
-    if (typeof message.content !== "string" || message.content.trim().length === 0) {
-      throw new TextGenerationError("Message content must be a non-empty string", 400);
+    if (
+      typeof message.content !== "string" ||
+      message.content.trim().length === 0
+    ) {
+      throw new TextGenerationError(
+        "Message content must be a non-empty string",
+        400,
+      );
     }
   }
 }
@@ -61,7 +69,9 @@ function getConversationMessages(messages: TextMessage[]): TextMessage[] {
   return messages.filter((msg) => msg.role !== "system");
 }
 
-function buildProviderParams(request: TextGenerationRequest): ProviderGenerateParams {
+function buildProviderParams(
+  request: TextGenerationRequest,
+): ProviderGenerateParams {
   validateMessages(request.messages);
 
   const conversationMessages = getConversationMessages(request.messages);
@@ -119,7 +129,10 @@ export async function generateText(
       return generateWithOllama(params);
     default: {
       const exhaustiveCheck: never = request.provider;
-      throw new TextGenerationError(`Unsupported provider: ${exhaustiveCheck}`, 400);
+      throw new TextGenerationError(
+        `Unsupported provider: ${exhaustiveCheck}`,
+        400,
+      );
     }
   }
 }

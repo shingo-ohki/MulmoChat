@@ -1,12 +1,18 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { MessageCreateParamsNonStreaming } from "@anthropic-ai/sdk/resources/messages";
-import { TextGenerationError, type ProviderGenerateParams, type TextGenerationResult, type TextMessage } from "../types";
+import {
+  TextGenerationError,
+  type ProviderGenerateParams,
+  type TextGenerationResult,
+  type TextMessage,
+} from "../types";
 
 type AnthropicRole = "user" | "assistant";
 
 function toAnthropicMessages(messages: TextMessage[]) {
   return messages.map((message) => {
-    const role: AnthropicRole = message.role === "assistant" ? "assistant" : "user";
+    const role: AnthropicRole =
+      message.role === "assistant" ? "assistant" : "user";
     return {
       role,
       content: [
@@ -60,7 +66,8 @@ export async function generateWithAnthropic(
         inputTokens: response.usage.input_tokens,
         outputTokens: response.usage.output_tokens,
         totalTokens:
-          (response.usage.input_tokens ?? 0) + (response.usage.output_tokens ?? 0),
+          (response.usage.input_tokens ?? 0) +
+          (response.usage.output_tokens ?? 0),
       }
     : undefined;
 

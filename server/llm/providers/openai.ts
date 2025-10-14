@@ -1,6 +1,11 @@
-import { TextGenerationError, type ProviderGenerateParams, type TextGenerationResult } from "../types";
+import {
+  TextGenerationError,
+  type ProviderGenerateParams,
+  type TextGenerationResult,
+} from "../types";
 
-const OPENAI_CHAT_COMPLETIONS_URL = "https://api.openai.com/v1/chat/completions";
+const OPENAI_CHAT_COMPLETIONS_URL =
+  "https://api.openai.com/v1/chat/completions";
 
 interface OpenAIChatCompletionResponse {
   choices: Array<{
@@ -21,7 +26,10 @@ export async function generateWithOpenAI(
 ): Promise<TextGenerationResult> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new TextGenerationError("OPENAI_API_KEY environment variable not set", 500);
+    throw new TextGenerationError(
+      "OPENAI_API_KEY environment variable not set",
+      500,
+    );
   }
 
   const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {

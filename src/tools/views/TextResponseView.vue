@@ -1,11 +1,10 @@
 <template>
   <div class="h-full w-full overflow-y-auto p-6">
     <div class="max-w-3xl mx-auto space-y-4">
-      <div
-        class="rounded-lg border bg-white shadow-sm p-5"
-        :class="roleTheme"
-      >
-        <div class="flex justify-between items-start mb-2 text-sm text-gray-500">
+      <div class="rounded-lg border bg-white shadow-sm p-5" :class="roleTheme">
+        <div
+          class="flex justify-between items-start mb-2 text-sm text-gray-500"
+        >
           <span class="font-medium text-gray-700">{{ speakerLabel }}</span>
           <span v-if="transportKind" class="italic">{{ transportKind }}</span>
         </div>
@@ -20,14 +19,19 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { ToolResultComplete } from "../types";
+import type { TextResponseData } from "../models/textResponse";
 
 const props = defineProps<{
-  selectedResult: ToolResultComplete<{ text: string; role?: string; transportKind?: string }>;
+  selectedResult: ToolResultComplete<TextResponseData>;
 }>();
 
-const messageText = computed(() => props.selectedResult.content.text);
-const messageRole = computed(() => props.selectedResult.content.role ?? "assistant");
-const transportKind = computed(() => props.selectedResult.content.transportKind ?? "");
+const messageText = computed(() => props.selectedResult.data?.text ?? "");
+const messageRole = computed(
+  () => props.selectedResult.data?.role ?? "assistant",
+);
+const transportKind = computed(
+  () => props.selectedResult.data?.transportKind ?? "",
+);
 
 const speakerLabel = computed(() => {
   switch (messageRole.value) {

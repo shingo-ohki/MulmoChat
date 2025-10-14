@@ -1,5 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
-import { TextGenerationError, type ProviderGenerateParams, type TextGenerationResult, type TextMessage } from "../types";
+import {
+  TextGenerationError,
+  type ProviderGenerateParams,
+  type TextGenerationResult,
+  type TextMessage,
+} from "../types";
 
 type GeminiRole = "user" | "model";
 
@@ -15,7 +20,9 @@ function toGeminiRole(role: TextMessage["role"]): GeminiRole {
 function extractPrimaryText(candidates: unknown): string {
   if (!Array.isArray(candidates)) return "";
   for (const candidate of candidates) {
-    const content = (candidate as { content?: { parts?: Array<{ text?: string }> } }).content;
+    const content = (
+      candidate as { content?: { parts?: Array<{ text?: string }> } }
+    ).content;
     const parts = content?.parts;
     if (!Array.isArray(parts)) continue;
     for (const part of parts) {
@@ -47,10 +54,12 @@ export async function generateWithGoogle(
 
   const ai = new GoogleGenAI({ apiKey });
 
-  const contents: GeminiContent[] = params.conversationMessages.map((message) => ({
-    role: toGeminiRole(message.role),
-    parts: [{ text: message.content }],
-  }));
+  const contents: GeminiContent[] = params.conversationMessages.map(
+    (message) => ({
+      role: toGeminiRole(message.role),
+      parts: [{ text: message.content }],
+    }),
+  );
 
   if (params.systemPrompt) {
     contents.unshift({

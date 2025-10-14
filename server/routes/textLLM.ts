@@ -10,7 +10,12 @@ import {
 const router = Router();
 
 function isProviderId(value: unknown): value is TextLLMProviderId {
-  return value === "openai" || value === "anthropic" || value === "google" || value === "ollama";
+  return (
+    value === "openai" ||
+    value === "anthropic" ||
+    value === "google" ||
+    value === "ollama"
+  );
 }
 
 function parseMessages(value: unknown): TextMessage[] {
@@ -97,7 +102,8 @@ router.post("/text/generate", async (req: Request, res: Response) => {
       return;
     }
 
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     res.status(500).json({
       success: false,
       error: "Failed to generate text",

@@ -3,7 +3,8 @@ import "dotenv/config";
 const BASE_URL = process.env.TEST_SERVER_URL ?? "http://localhost:3001";
 
 async function main(): Promise<void> {
-  const prompt = process.argv[2] ?? "Explain why streaming responses are useful.";
+  const prompt =
+    process.argv[2] ?? "Explain why streaming responses are useful.";
   const model = process.env.OPENAI_TEST_MODEL ?? "gpt-4o-mini";
 
   if (!process.env.OPENAI_API_KEY) {
