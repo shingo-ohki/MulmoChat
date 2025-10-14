@@ -28,6 +28,11 @@
         :enabled-plugins="userPreferences.enabledPlugins"
         :custom-instructions="userPreferences.customInstructions"
         :model-id="userPreferences.modelId"
+        :model-kind="userPreferences.modelKind"
+        :text-model-id="userPreferences.textModelId"
+        :text-model-options="textModelOptions"
+        :supports-audio-input="supportsAudioInput"
+        :supports-audio-output="supportsAudioOutput"
         @start-chat="startChat"
         @stop-chat="stopChat"
         @set-mute="setMute"
@@ -44,6 +49,8 @@
           userPreferences.customInstructions = $event
         "
         @update:model-id="userPreferences.modelId = $event"
+        @update:model-kind="userPreferences.modelKind = $event"
+        @update:text-model-id="userPreferences.textModelId = $event"
         @upload-files="handleUploadFiles"
       />
 
@@ -76,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { toolExecute, getToolPlugin } from "./tools";
 import Sidebar from "./components/Sidebar.vue";
 import { useSessionTransport } from "./composables/useSessionTransport";
@@ -84,6 +91,8 @@ import { useUserPreferences } from "./composables/useUserPreferences";
 import { useToolResults } from "./composables/useToolResults";
 import { useScrolling } from "./composables/useScrolling";
 import { SESSION_CONFIG } from "./config/session";
+import { DEFAULT_TEXT_MODEL } from "./config/textModels";
+import type { TextProvidersResponse } from "../server/types";
 
 const sidebarRef = ref<InstanceType<typeof Sidebar> | null>(null);
 const preferences = useUserPreferences();
@@ -101,15 +110,40 @@ const messages = ref<string[]>([]);
 const currentText = ref("");
 const userInput = ref("");
 
+interface TextModelOption {
+  id: string;
+  label: string;
+  disabled?: boolean;
+}
+
+const textModelOptions = ref<TextModelOption[]>([
+  {
+    id: DEFAULT_TEXT_MODEL.rawId,
+    label: "OpenAI — gpt-4o-mini (default)",
+  },
+]);
+
+const PROVIDER_LABELS: Record<string, string> = {
+  openai: "OpenAI",
+  anthropic: "Anthropic",
+  google: "Google Gemini",
+  ollama: "Ollama",
+};
+
 const scrolling = useScrolling({
   sidebarRef: () => sidebarRef.value,
 });
 
+const transportKind = computed(() => userPreferences.modelKind);
+
 const session = useSessionTransport({
-  transportKind: computed(() => "voice-realtime"),
+  transportKind,
   buildInstructions: (context) => buildPreferenceInstructions(context),
   buildTools: (context) => buildPreferenceTools(context),
-  getModelId: () => userPreferences.modelId,
+  getModelId: () =>
+    userPreferences.modelKind === "voice-realtime"
+      ? userPreferences.modelId
+      : userPreferences.textModelId,
 });
 
 const {
@@ -119,8 +153,8 @@ const {
   isMuted,
   startResponse,
   isDataChannelOpen,
-  startChat: startRealtimeChat,
-  stopChat: stopRealtimeChat,
+  startChat: startTransportChat,
+  stopChat: stopTransportChat,
   sendUserMessage: sendUserMessageInternal,
   sendFunctionCallOutput,
   sendInstructions,
@@ -137,6 +171,75 @@ const supportsAudioInput = computed(
 const supportsAudioOutput = computed(
   () => capabilities.value.supportsAudioOutput,
 );
+
+async function loadTextProviders(): Promise<void> {
+  try {
+    const response = await fetch("/api/text/providers");
+    if (!response.ok) {
+      throw new Error(`Failed to load text providers: ${response.statusText}`);
+    }
+    const payload = (await response.json()) as TextProvidersResponse;
+    const options: TextModelOption[] = [];
+
+    for (const provider of payload.providers ?? []) {
+      const providerLabel =
+        PROVIDER_LABELS[provider.provider] ?? provider.provider;
+      const models = new Set<string>();
+      if (provider.models?.length) {
+        provider.models.forEach((model) => models.add(model));
+      }
+      if (provider.defaultModel) {
+        models.add(provider.defaultModel);
+      }
+      if (models.size === 0) {
+        continue;
+      }
+      for (const model of models) {
+        const isDefault = provider.defaultModel === model;
+        const credentialNote = provider.hasCredentials
+          ? ""
+          : " (credentials required)";
+        options.push({
+          id: `${provider.provider}:${model}`,
+          label: `${providerLabel} — ${model}${isDefault ? " (default)" : ""}${credentialNote}`,
+          disabled: !provider.hasCredentials,
+        });
+      }
+    }
+
+    if (options.length === 0) {
+      options.push({
+        id: DEFAULT_TEXT_MODEL.rawId,
+        label: "OpenAI — gpt-4o-mini (default)",
+      });
+    }
+
+    textModelOptions.value = options;
+    const preferred = options.find(
+      (option) => option.id === userPreferences.textModelId && !option.disabled,
+    );
+    const fallback =
+      preferred || options.find((option) => !option.disabled) || options[0];
+    if (fallback && fallback.id !== userPreferences.textModelId) {
+      userPreferences.textModelId = fallback.id;
+    }
+  } catch (error) {
+    console.warn("Failed to load text model providers", error);
+    textModelOptions.value = [
+      {
+        id: DEFAULT_TEXT_MODEL.rawId,
+        label: "OpenAI — gpt-4o-mini (default)",
+      },
+    ];
+    if (!userPreferences.textModelId) {
+      userPreferences.textModelId = DEFAULT_TEXT_MODEL.rawId;
+    }
+  }
+}
+
+onMounted(() => {
+  void loadTextProviders();
+});
 
 const {
   toolResults,
@@ -222,7 +325,7 @@ async function startChat(): Promise<void> {
   if (supportsAudioInput.value) {
     lastSpeechStartedTime.value = Date.now();
   }
-  await startRealtimeChat();
+  await startTransportChat();
 }
 
 async function sendTextMessage(providedText?: string): Promise<void> {
@@ -251,7 +354,7 @@ async function sendTextMessage(providedText?: string): Promise<void> {
 }
 
 function stopChat(): void {
-  stopRealtimeChat();
+  stopTransportChat();
 }
 
 function setMute(muted: boolean): void {
@@ -281,6 +384,15 @@ async function switchMode(newSystemPromptId: string): Promise<void> {
 if (typeof window !== "undefined") {
   (window as any).switchMode = switchMode;
 }
+
+watch(
+  () => userPreferences.modelKind,
+  (newKind, previousKind) => {
+    if (newKind !== previousKind && chatActive.value) {
+      stopChat();
+    }
+  },
+);
 </script>
 
 <style scoped></style>

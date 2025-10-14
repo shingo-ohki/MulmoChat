@@ -11,7 +11,7 @@
           :disabled="connecting"
           class="flex-1 px-4 py-2 bg-green-600 text-white rounded disabled:opacity-50"
         >
-          {{ connecting ? "Connecting..." : "Connect" }}
+          {{ connecting ? "Connecting..." : connectButtonLabel }}
         </button>
         <div v-else class="flex gap-2 w-full">
           <div class="flex items-center justify-center px-2">
@@ -36,6 +36,7 @@
                 : 'bg-gray-100 text-gray-600 border-gray-300'
             "
             :title="isMuted ? 'Unmute microphone' : 'Mute microphone'"
+            :disabled="!supportsAudioInput"
           >
             <span class="material-icons text-lg">{{
               isMuted ? "mic_off" : "mic"
@@ -51,7 +52,7 @@
           <span class="material-icons text-lg">settings</span>
         </button>
       </div>
-      <audio ref="audioEl" autoplay></audio>
+      <audio v-if="supportsAudioOutput" ref="audioEl" autoplay></audio>
     </div>
 
     <!-- Generated images container -->
@@ -151,6 +152,29 @@
         <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
+              Mode
+            </label>
+            <select
+              :value="modelKind"
+              @change="
+                $emit(
+                  'update:modelKind',
+                  ($event.target as HTMLSelectElement).value,
+                )
+              "
+              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="voice-realtime">Voice (Realtime)</option>
+              <option value="text-rest">Text (REST)</option>
+            </select>
+            <p class="text-xs text-gray-500 mt-1">
+              Choose between the WebRTC voice experience and the REST text
+              interface.
+            </p>
+          </div>
+
+          <div v-if="isVoiceMode">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
               Realtime Model
             </label>
             <select
@@ -173,6 +197,35 @@
             </select>
             <p class="text-xs text-gray-500 mt-1">
               Chooses the OpenAI realtime model used when connecting.
+            </p>
+          </div>
+
+          <div v-else>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Text Model
+            </label>
+            <select
+              :value="textModelId"
+              @change="
+                $emit(
+                  'update:textModelId',
+                  ($event.target as HTMLSelectElement).value,
+                )
+              "
+              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option
+                v-for="option in textModelOptions"
+                :key="option.id"
+                :value="option.id"
+                :disabled="option.disabled"
+              >
+                {{ option.label }}
+              </option>
+            </select>
+            <p class="text-xs text-gray-500 mt-1">
+              Select the REST text model. Providers marked “credentials
+              required” need an API key set on the server.
             </p>
           </div>
 
@@ -328,6 +381,12 @@ import { LANGUAGES } from "../config/languages";
 import { SYSTEM_PROMPTS } from "../config/systemPrompts";
 import { REALTIME_MODELS } from "../config/models";
 
+interface TextModelOption {
+  id: string;
+  label: string;
+  disabled?: boolean;
+}
+
 const props = defineProps<{
   chatActive: boolean;
   connecting: boolean;
@@ -344,6 +403,11 @@ const props = defineProps<{
   enabledPlugins: Record<string, boolean>;
   customInstructions: string;
   modelId: string;
+  modelKind: "voice-realtime" | "text-rest";
+  textModelId: string;
+  textModelOptions: TextModelOption[];
+  supportsAudioInput: boolean;
+  supportsAudioOutput: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -359,6 +423,8 @@ const emit = defineEmits<{
   "update:enabledPlugins": [value: Record<string, boolean>];
   "update:customInstructions": [value: string];
   "update:modelId": [value: string];
+  "update:modelKind": [value: "voice-realtime" | "text-rest"];
+  "update:textModelId": [value: string];
   uploadFiles: [results: ToolResult[]];
 }>();
 
@@ -369,6 +435,10 @@ const showConfigPopup = ref(false);
 
 const acceptedFileTypes = computed(() => getAcceptedFileTypes().join(","));
 const fileUploadPlugins = computed(() => getFileUploadPlugins());
+const isVoiceMode = computed(() => props.modelKind === "voice-realtime");
+const connectButtonLabel = computed(() =>
+  isVoiceMode.value ? "Connect" : "Start Session",
+);
 
 function scrollToBottom(): void {
   nextTick(() => {
@@ -427,10 +497,13 @@ function handlePluginToggle(pluginName: string, enabled: boolean): void {
 }
 
 function getModeIcon(): string {
+  if (props.modelKind === "text-rest") {
+    return "edit_note";
+  }
   const systemPrompt = SYSTEM_PROMPTS.find(
     (prompt) => prompt.id === props.systemPromptId,
   );
-  return systemPrompt?.icon || "star";
+  return systemPrompt?.icon || "graphic_eq";
 }
 
 defineExpose({

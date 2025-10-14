@@ -8,6 +8,7 @@ import {
 } from "../config/systemPrompts";
 import { pluginTools, getPluginSystemPrompts } from "../tools";
 import { DEFAULT_REALTIME_MODEL_ID } from "../config/models";
+import { DEFAULT_TEXT_MODEL } from "../config/textModels";
 import type { BuildContext } from "./types";
 
 const USER_LANGUAGE_KEY = "user_language_v1";
@@ -16,6 +17,8 @@ const SYSTEM_PROMPT_ID_KEY = "system_prompt_id_v1";
 const ENABLED_PLUGINS_KEY = "enabled_plugins_v1";
 const CUSTOM_INSTRUCTIONS_KEY = "custom_instructions_v1";
 const MODEL_ID_KEY = "model_id_v1";
+const MODEL_KIND_KEY = "model_kind_v2";
+const TEXT_MODEL_ID_KEY = "text_model_id_v1";
 
 interface StorageLike {
   getItem(key: string): string | null;
@@ -49,6 +52,8 @@ export interface UserPreferencesState {
   customInstructions: string;
   enabledPlugins: Record<string, boolean>;
   modelId: string;
+  modelKind: "voice-realtime" | "text-rest";
+  textModelId: string;
 }
 
 export interface UseUserPreferencesReturn {
@@ -67,7 +72,17 @@ const initEnabledPlugins = (): Record<string, boolean> => {
   }
 };
 
+const resolveStoredModelKind = (
+  stored: string | null,
+): UserPreferencesState["modelKind"] => {
+  if (stored === "text-rest") return "text-rest";
+  return "voice-realtime";
+};
+
 export function useUserPreferences(): UseUserPreferencesReturn {
+  const storedModelKind = resolveStoredModelKind(
+    getStoredValue(MODEL_KIND_KEY),
+  );
   const state = reactive<UserPreferencesState>({
     userLanguage: getStoredValue(USER_LANGUAGE_KEY) || DEFAULT_LANGUAGE_CODE,
     suppressInstructions: getStoredValue(SUPPRESS_INSTRUCTIONS_KEY) === "true",
@@ -76,6 +91,8 @@ export function useUserPreferences(): UseUserPreferencesReturn {
     customInstructions: getStoredValue(CUSTOM_INSTRUCTIONS_KEY) || "",
     enabledPlugins: initEnabledPlugins(),
     modelId: getStoredValue(MODEL_ID_KEY) || DEFAULT_REALTIME_MODEL_ID,
+    modelKind: storedModelKind,
+    textModelId: getStoredValue(TEXT_MODEL_ID_KEY) || DEFAULT_TEXT_MODEL.rawId,
   });
 
   watch(
@@ -110,6 +127,20 @@ export function useUserPreferences(): UseUserPreferencesReturn {
     () => state.modelId,
     (val) => {
       setStoredValue(MODEL_ID_KEY, val);
+    },
+  );
+
+  watch(
+    () => state.modelKind,
+    (val) => {
+      setStoredValue(MODEL_KIND_KEY, val);
+    },
+  );
+
+  watch(
+    () => state.textModelId,
+    (val) => {
+      setStoredValue(TEXT_MODEL_ID_KEY, val);
     },
   );
 
