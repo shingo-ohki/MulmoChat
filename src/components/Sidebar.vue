@@ -108,7 +108,7 @@
           @input="
             $emit('update:userInput', ($event.target as HTMLInputElement).value)
           "
-          @keyup.enter.prevent="$emit('sendTextMessage')"
+          @keydown.enter="handleEnterKey"
           :disabled="!chatActive"
           type="text"
           placeholder="Type a message"
@@ -504,6 +504,20 @@ function getModeIcon(): string {
     (prompt) => prompt.id === props.systemPromptId,
   );
   return systemPrompt?.icon || "graphic_eq";
+}
+
+function handleEnterKey(event: KeyboardEvent): void {
+  // Don't submit if text is empty or chat is not active
+  if (!props.chatActive || !props.userInput.trim()) {
+    event.preventDefault();
+    return;
+  }
+
+  // Submit the message
+  event.preventDefault();
+  emit("sendTextMessage");
+  // Clear the input after sending
+  emit("update:userInput", "");
 }
 
 defineExpose({
