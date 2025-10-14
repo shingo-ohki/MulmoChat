@@ -266,7 +266,8 @@ export function useTextSession(
         {
           type: "response.function_call_arguments.done",
           name: "text-response",
-          call_id: callId,
+          // Intentionally omit call_id so the pseudo tool doesn't trigger
+          // sendFunctionCallOutput back to the LLM transport.
         },
         callId,
         JSON.stringify({
