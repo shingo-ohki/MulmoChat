@@ -125,7 +125,7 @@ export function useTextSession(
             provider: resolvedModel.provider,
             model: resolvedModel.model,
             systemPrompt: instructions,
-            tools: tools,
+            tools,
           }),
         });
 
