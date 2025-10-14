@@ -85,6 +85,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
 import { toolExecute, getToolPlugin } from "./tools";
+import type { ToolResult } from "./tools";
 import Sidebar from "./components/Sidebar.vue";
 import { useSessionTransport } from "./composables/useSessionTransport";
 import { useUserPreferences } from "./composables/useUserPreferences";
@@ -331,6 +332,24 @@ async function startChat(): Promise<void> {
 async function sendTextMessage(providedText?: string): Promise<void> {
   const text = (providedText || userInput.value).trim();
   if (!text) return;
+
+  // Add user message as a tool result for conversation history
+  // Only add if it's from the user input box (not providedText from other sources)
+  if (!providedText) {
+    const userMessageResult: ToolResult = {
+      uuid: crypto.randomUUID(),
+      toolName: "text-response",
+      message: text,
+      title: "You",
+      data: {
+        text: text,
+        role: "user",
+        transportKind: transportKind.value,
+      },
+    };
+    toolResults.value.push(userMessageResult);
+    scrolling.scrollSidebarToBottom();
+  }
 
   // Wait for conversation to be inactive
   for (

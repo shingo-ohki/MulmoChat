@@ -6,9 +6,7 @@
           class="flex justify-between items-start mb-2 text-sm text-gray-500"
         >
           <span class="font-medium text-gray-700">{{ speakerLabel }}</span>
-          <span v-if="transportKind" class="italic"
-            >{{ transportKind }}</span
-          >
+          <span v-if="transportKind" class="italic">{{ transportKind }}</span>
         </div>
         <div
           class="markdown-content prose prose-slate max-w-none leading-relaxed text-gray-900"

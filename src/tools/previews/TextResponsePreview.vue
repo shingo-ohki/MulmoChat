@@ -1,5 +1,5 @@
 <template>
-  <div class="text-sm text-gray-700 leading-snug">
+  <div class="text-sm leading-snug" :class="textColorClass">
     <p class="line-clamp-3 whitespace-pre-wrap">{{ previewText }}</p>
   </div>
 </template>
@@ -14,4 +14,16 @@ const props = defineProps<{
 }>();
 
 const previewText = computed(() => props.result.data?.text ?? "");
+const messageRole = computed(() => props.result.data?.role ?? "assistant");
+
+const textColorClass = computed(() => {
+  switch (messageRole.value) {
+    case "system":
+      return "text-blue-700";
+    case "user":
+      return "text-green-700 font-medium";
+    default:
+      return "text-gray-700";
+  }
+});
 </script>
