@@ -5,11 +5,13 @@
         <div
           class="flex justify-between items-start mb-2 text-sm text-gray-500"
         >
-          <span class="font-medium text-gray-700">{{ speakerLabel }}</span>
-          <span v-if="transportKind" class="italic">{{ transportKind }}</span>
+          <span class="font-medium text-gray-700">A: {{ speakerLabel }}</span>
+          <span v-if="transportKind" class="italic"
+            >B: {{ transportKind }}</span
+          >
         </div>
         <p class="whitespace-pre-wrap leading-relaxed text-gray-900">
-          {{ messageText }}
+          C: {{ messageText }}
         </p>
       </div>
     </div>

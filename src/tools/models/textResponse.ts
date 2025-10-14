@@ -1,4 +1,6 @@
 import type { ToolPlugin } from "../types";
+import TextResponseView from "../views/TextResponseView.vue";
+import TextResponsePreview from "../previews/TextResponsePreview.vue";
 
 export interface TextResponseData {
   text: string;
@@ -36,8 +38,8 @@ export const plugin: ToolPlugin<TextResponseData> = {
   },
   // Never advertise this pseudo tool to the LLM; only the client uses it.
   isEnabled: () => false,
-  viewComponent: () => import("../views/TextResponseView.vue"),
-  previewComponent: () => import("../previews/TextResponsePreview.vue"),
+  viewComponent: TextResponseView,
+  previewComponent: TextResponsePreview,
   execute: async (_context, args: TextResponseArgs) => ({
     data: {
       text: args.text,
