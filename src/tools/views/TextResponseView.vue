@@ -10,9 +10,10 @@
             >{{ transportKind }}</span
           >
         </div>
-        <p class="whitespace-pre-wrap leading-relaxed text-gray-900">
-          {{ messageText }}
-        </p>
+        <div
+          class="markdown-content prose prose-slate max-w-none leading-relaxed text-gray-900"
+          v-html="renderedHtml"
+        ></div>
       </div>
     </div>
   </div>
@@ -20,6 +21,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import { marked } from "marked";
 import type { ToolResultComplete } from "../types";
 import type { TextResponseData } from "../models/textResponse";
 
@@ -34,6 +36,11 @@ const messageRole = computed(
 const transportKind = computed(
   () => props.selectedResult.data?.transportKind ?? "",
 );
+
+const renderedHtml = computed(() => {
+  if (!messageText.value) return "";
+  return marked(messageText.value);
+});
 
 const speakerLabel = computed(() => {
   switch (messageRole.value) {
@@ -57,3 +64,122 @@ const roleTheme = computed(() => {
   }
 });
 </script>
+
+<style scoped>
+.markdown-content :deep(h1) {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+.markdown-content :deep(h2) {
+  font-size: 1.75rem;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+.markdown-content :deep(h3) {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+.markdown-content :deep(h4) {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+.markdown-content :deep(h5) {
+  font-size: 1.125rem;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+.markdown-content :deep(h6) {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+.markdown-content :deep(p) {
+  margin-bottom: 1em;
+}
+
+.markdown-content :deep(ul),
+.markdown-content :deep(ol) {
+  margin-left: 1.5em;
+  margin-bottom: 1em;
+}
+
+.markdown-content :deep(li) {
+  margin-bottom: 0.5em;
+}
+
+.markdown-content :deep(code) {
+  background-color: #f5f5f5;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+.markdown-content :deep(pre) {
+  background-color: #f5f5f5;
+  padding: 1em;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin-bottom: 1em;
+}
+
+.markdown-content :deep(pre code) {
+  background-color: transparent;
+  padding: 0;
+}
+
+.markdown-content :deep(blockquote) {
+  border-left: 4px solid #ddd;
+  padding-left: 1em;
+  color: #666;
+  margin: 1em 0;
+}
+
+.markdown-content :deep(a) {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.markdown-content :deep(a:hover) {
+  color: #1d4ed8;
+}
+
+.markdown-content :deep(table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1em;
+}
+
+.markdown-content :deep(th),
+.markdown-content :deep(td) {
+  border: 1px solid #ddd;
+  padding: 0.5em;
+  text-align: left;
+}
+
+.markdown-content :deep(th) {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+.markdown-content :deep(hr) {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 1.5em 0;
+}
+</style>
