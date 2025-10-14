@@ -5,7 +5,19 @@ import {
   type TextGenerationRequest,
   type TextLLMProviderId,
   type TextMessage,
+  type TextSessionDefaults,
 } from "../llm/types";
+import {
+  appendSessionMessages,
+  clearSessionQueues,
+  createTextSession,
+  deleteTextSession,
+  getTextSession,
+  queueSessionInstructions,
+  queueSessionToolOutputs,
+  serializeSession,
+  updateSessionDefaults,
+} from "../llm/textSessionStore";
 
 const router = Router();
 
@@ -47,6 +59,128 @@ function parseMessages(value: unknown): TextMessage[] {
       content,
     };
   });
+}
+
+function optionalNumber(value: unknown, field: string): number | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    throw new TextGenerationError(`${field} must be a valid number`, 400);
+  }
+
+  return value;
+}
+
+function validateGenerationDefaults(defaults: TextSessionDefaults): void {
+  if (
+    defaults.maxTokens !== undefined &&
+    (!Number.isFinite(defaults.maxTokens) || defaults.maxTokens <= 0)
+  ) {
+    throw new TextGenerationError("maxTokens must be greater than zero", 400);
+  }
+
+  if (
+    defaults.temperature !== undefined &&
+    (defaults.temperature < 0 || defaults.temperature > 2)
+  ) {
+    throw new TextGenerationError("temperature must be between 0 and 2", 400);
+  }
+
+  if (
+    defaults.topP !== undefined &&
+    (defaults.topP <= 0 || defaults.topP > 1)
+  ) {
+    throw new TextGenerationError("topP must be between 0 and 1", 400);
+  }
+}
+
+function normalizeInstructions(
+  value: unknown,
+  field = "instructions",
+): string[] {
+  if (value === undefined || value === null) {
+    return [];
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed ? [trimmed] : [];
+  }
+
+  if (Array.isArray(value)) {
+    const instructions = value
+      .map((item, index) => {
+        if (typeof item !== "string") {
+          throw new TextGenerationError(
+            `${field}[${index}] must be a string`,
+            400,
+          );
+        }
+        const trimmed = item.trim();
+        if (!trimmed) {
+          return null;
+        }
+        return trimmed;
+      })
+      .filter((instruction): instruction is string => Boolean(instruction));
+
+    return instructions;
+  }
+
+  throw new TextGenerationError(`${field} must be a string or array`, 400);
+}
+
+interface NormalizedToolOutput {
+  callId: string;
+  output: string;
+}
+
+function normalizeToolOutputs(value: unknown): NormalizedToolOutput[] {
+  if (value === undefined || value === null) {
+    throw new TextGenerationError("Tool output payload is required", 400);
+  }
+
+  const toPayload = (input: unknown, index?: number): NormalizedToolOutput => {
+    if (!input || typeof input !== "object") {
+      const position = index !== undefined ? `[${index}]` : "";
+      throw new TextGenerationError(
+        `toolOutputs${position} must be an object`,
+        400,
+      );
+    }
+    const callId = (input as { callId?: unknown }).callId;
+    const output = (input as { output?: unknown }).output;
+
+    if (typeof callId !== "string" || !callId.trim()) {
+      throw new TextGenerationError("callId must be a non-empty string", 400);
+    }
+    if (typeof output !== "string" || !output.trim()) {
+      throw new TextGenerationError("output must be a non-empty string", 400);
+    }
+
+    return {
+      callId: callId.trim(),
+      output: output.trim(),
+    };
+  };
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      throw new TextGenerationError("toolOutputs array cannot be empty", 400);
+    }
+    return value.map((item, index) => toPayload(item, index));
+  }
+
+  return [toPayload(value)];
+}
+
+function buildToolOutputMessage({
+  callId,
+  output,
+}: NormalizedToolOutput): string {
+  return `Tool output (${callId}): ${output}`;
 }
 
 router.get("/text/providers", (_req: Request, res: Response) => {
@@ -111,5 +245,324 @@ router.post("/text/generate", async (req: Request, res: Response) => {
     });
   }
 });
+
+router.post("/text/session", (req: Request, res: Response) => {
+  try {
+    const {
+      provider,
+      model,
+      systemPrompt,
+      messages,
+      maxTokens,
+      temperature,
+      topP,
+    } = req.body as Partial<TextGenerationRequest> & {
+      systemPrompt?: unknown;
+      messages?: unknown;
+    };
+
+    if (!isProviderId(provider)) {
+      throw new TextGenerationError("Unsupported provider", 400);
+    }
+
+    if (typeof model !== "string" || !model.trim()) {
+      throw new TextGenerationError("Model is required", 400);
+    }
+
+    const defaults = {
+      maxTokens: optionalNumber(maxTokens, "maxTokens"),
+      temperature: optionalNumber(temperature, "temperature"),
+      topP: optionalNumber(topP, "topP"),
+    };
+
+    validateGenerationDefaults(defaults);
+
+    const initialMessages = messages ? parseMessages(messages) : undefined;
+
+    const session = createTextSession({
+      provider,
+      model: model.trim(),
+      systemPrompt:
+        typeof systemPrompt === "string" && systemPrompt.trim()
+          ? systemPrompt.trim()
+          : undefined,
+      initialMessages,
+      defaults,
+    });
+
+    res.status(201).json({
+      success: true,
+      session,
+    });
+  } catch (error: unknown) {
+    if (error instanceof TextGenerationError) {
+      res.status(error.statusCode ?? 400).json({
+        success: false,
+        error: error.message,
+      });
+      return;
+    }
+
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    res.status(500).json({
+      success: false,
+      error: "Failed to create text session",
+      details: errorMessage,
+    });
+  }
+});
+
+router.get("/text/session/:sessionId", (req: Request, res: Response) => {
+  const session = getTextSession(req.params.sessionId);
+  if (!session) {
+    res.status(404).json({
+      success: false,
+      error: "Session not found",
+    });
+    return;
+  }
+
+  res.json({
+    success: true,
+    session: serializeSession(session),
+  });
+});
+
+router.delete("/text/session/:sessionId", (req: Request, res: Response) => {
+  const deleted = deleteTextSession(req.params.sessionId);
+  if (!deleted) {
+    res.status(404).json({
+      success: false,
+      error: "Session not found",
+    });
+    return;
+  }
+
+  res.json({ success: true });
+});
+
+router.post(
+  "/text/session/:sessionId/instructions",
+  (req: Request, res: Response) => {
+    const session = getTextSession(req.params.sessionId);
+    if (!session) {
+      res.status(404).json({
+        success: false,
+        error: "Session not found",
+      });
+      return;
+    }
+
+    try {
+      const instructions = normalizeInstructions(
+        req.body?.instructions ?? req.body,
+      );
+      queueSessionInstructions(session, instructions);
+      res.json({
+        success: true,
+        session: serializeSession(session),
+      });
+    } catch (error: unknown) {
+      if (error instanceof TextGenerationError) {
+        res.status(error.statusCode ?? 400).json({
+          success: false,
+          error: error.message,
+        });
+        return;
+      }
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({
+        success: false,
+        error: "Failed to enqueue instructions",
+        details: errorMessage,
+      });
+    }
+  },
+);
+
+router.post(
+  "/text/session/:sessionId/tool-output",
+  (req: Request, res: Response) => {
+    const session = getTextSession(req.params.sessionId);
+    if (!session) {
+      res.status(404).json({
+        success: false,
+        error: "Session not found",
+      });
+      return;
+    }
+
+    try {
+      const parsedOutputs = normalizeToolOutputs(
+        req.body?.toolOutputs ?? req.body,
+      );
+      queueSessionToolOutputs(session, parsedOutputs);
+      res.json({
+        success: true,
+        session: serializeSession(session),
+      });
+    } catch (error: unknown) {
+      if (error instanceof TextGenerationError) {
+        res.status(error.statusCode ?? 400).json({
+          success: false,
+          error: error.message,
+        });
+        return;
+      }
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({
+        success: false,
+        error: "Failed to enqueue tool output",
+        details: errorMessage,
+      });
+    }
+  },
+);
+
+router.post(
+  "/text/session/:sessionId/message",
+  async (req: Request, res: Response) => {
+    const session = getTextSession(req.params.sessionId);
+    if (!session) {
+      res.status(404).json({
+        success: false,
+        error: "Session not found",
+      });
+      return;
+    }
+
+    const role = (req.body?.role ?? "user") as TextMessage["role"];
+    const content = req.body?.content;
+    const instructionsInput = req.body?.instructions;
+    const maxTokens = optionalNumber(req.body?.maxTokens, "maxTokens");
+    const temperature = optionalNumber(req.body?.temperature, "temperature");
+    const topP = optionalNumber(req.body?.topP, "topP");
+
+    const providedDefaults: TextSessionDefaults = {};
+    if (maxTokens !== undefined) {
+      providedDefaults.maxTokens = maxTokens;
+    }
+    if (temperature !== undefined) {
+      providedDefaults.temperature = temperature;
+    }
+    if (topP !== undefined) {
+      providedDefaults.topP = topP;
+    }
+
+    if (role !== "user") {
+      res.status(400).json({
+        success: false,
+        error: "Only user messages are supported",
+      });
+      return;
+    }
+
+    if (typeof content !== "string" || !content.trim()) {
+      res.status(400).json({
+        success: false,
+        error: "Message content must be a non-empty string",
+      });
+      return;
+    }
+
+    const trimmedContent = content.trim();
+
+    try {
+      const newInstructions = normalizeInstructions(instructionsInput);
+
+      validateGenerationDefaults(providedDefaults);
+
+      queueSessionInstructions(session, newInstructions);
+
+      const queuedInstructionMessages = session.queuedInstructions.map(
+        (instruction) => ({
+          role: "system" as const,
+          content: instruction,
+        }),
+      );
+      const queuedToolOutputMessages = session.queuedToolOutputs.map(
+        (item) => ({
+          role: "system" as const,
+          content: buildToolOutputMessage(item),
+        }),
+      );
+
+      const userMessage: TextMessage = {
+        role: "user",
+        content: trimmedContent,
+      };
+
+      const conversation: TextMessage[] = [
+        ...session.messages,
+        ...queuedInstructionMessages,
+        ...queuedToolOutputMessages,
+        userMessage,
+      ];
+
+      const requestPayload: TextGenerationRequest = {
+        provider: session.provider,
+        model: session.model,
+        messages: conversation,
+      };
+
+      const effectiveMaxTokens = maxTokens ?? session.defaults.maxTokens;
+      const effectiveTemperature = temperature ?? session.defaults.temperature;
+      const effectiveTopP = topP ?? session.defaults.topP;
+
+      if (effectiveMaxTokens !== undefined) {
+        requestPayload.maxTokens = effectiveMaxTokens;
+      }
+      if (effectiveTemperature !== undefined) {
+        requestPayload.temperature = effectiveTemperature;
+      }
+      if (effectiveTopP !== undefined) {
+        requestPayload.topP = effectiveTopP;
+      }
+
+      const result = await generateText(requestPayload);
+
+      appendSessionMessages(session, [
+        userMessage,
+        {
+          role: "assistant",
+          content: result.text,
+        },
+      ]);
+
+      if (Object.keys(providedDefaults).length > 0) {
+        updateSessionDefaults(session, providedDefaults);
+      }
+
+      clearSessionQueues(session);
+
+      res.json({
+        success: true,
+        result,
+        session: serializeSession(session),
+      });
+    } catch (error: unknown) {
+      if (error instanceof TextGenerationError) {
+        res.status(error.statusCode ?? 400).json({
+          success: false,
+          error: error.message,
+        });
+        return;
+      }
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      res.status(500).json({
+        success: false,
+        error: "Failed to process message",
+        details: errorMessage,
+      });
+    }
+  },
+);
 
 export default router;
