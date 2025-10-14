@@ -111,6 +111,9 @@ export function useTextSession(
       const instructions = options.buildInstructions({
         startResponse: startResponse.value,
       });
+      const tools = options.buildTools({
+        startResponse: startResponse.value,
+      });
 
       try {
         const response = await fetch("/api/text/session", {
@@ -122,6 +125,7 @@ export function useTextSession(
             provider: resolvedModel.provider,
             model: resolvedModel.model,
             systemPrompt: instructions,
+            tools: tools,
           }),
         });
 
@@ -227,18 +231,23 @@ export function useTextSession(
       );
 
       if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`);
+        const errorBody = await response.text();
+        console.error("Message API error:", response.status, errorBody);
+        throw new Error(`API error: ${response.statusText} - ${errorBody}`);
       }
 
       const payload = (await response.json()) as {
         success?: boolean;
-        result?: { text?: string };
+        result?: {
+          text?: string;
+          toolCalls?: Array<{ id: string; name: string; arguments: string }>;
+        };
         session?: { messages?: TextMessage[] };
         error?: unknown;
         details?: unknown;
       };
 
-      if (!payload.success || !payload.result?.text) {
+      if (!payload.success) {
         throw new Error(
           typeof payload.error === "string"
             ? payload.error
@@ -246,11 +255,10 @@ export function useTextSession(
         );
       }
 
-      const assistantText = payload.result.text;
+      const assistantText = payload.result?.text ?? "";
+      const toolCalls = payload.result?.toolCalls;
 
-      handlers.onTextDelta?.(assistantText);
-      handlers.onTextCompleted?.();
-
+      // Update conversation messages
       if (payload.session?.messages) {
         conversationMessages.value = payload.session.messages;
       } else {
@@ -261,21 +269,42 @@ export function useTextSession(
         ];
       }
 
-      const callId = createCallId();
-      handlers.onToolCall?.(
-        {
-          type: "response.function_call_arguments.done",
-          name: "text-response",
-          // Intentionally omit call_id so the pseudo tool doesn't trigger
-          // sendFunctionCallOutput back to the LLM transport.
-        },
-        callId,
-        JSON.stringify({
-          text: assistantText,
-          role: "assistant",
-          transportKind: "text-rest",
-        }),
-      );
+      // Handle tool calls if present
+      if (toolCalls && toolCalls.length > 0) {
+        for (const toolCall of toolCalls) {
+          handlers.onToolCall?.(
+            {
+              type: "response.function_call_arguments.done",
+              name: toolCall.name,
+              call_id: toolCall.id,
+            },
+            toolCall.id,
+            toolCall.arguments,
+          );
+        }
+      }
+
+      // Always show text response if there's any text
+      if (assistantText) {
+        handlers.onTextDelta?.(assistantText);
+        handlers.onTextCompleted?.();
+
+        const callId = createCallId();
+        handlers.onToolCall?.(
+          {
+            type: "response.function_call_arguments.done",
+            name: "text-response",
+            // Intentionally omit call_id so the pseudo tool doesn't trigger
+            // sendFunctionCallOutput back to the LLM transport.
+          },
+          callId,
+          JSON.stringify({
+            text: assistantText,
+            role: "assistant",
+            transportKind: "text-rest",
+          }),
+        );
+      }
 
       return true;
     } catch (error) {

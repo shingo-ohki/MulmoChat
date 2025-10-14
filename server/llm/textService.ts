@@ -101,6 +101,9 @@ function buildProviderParams(
   if (request.topP !== undefined) {
     params.topP = request.topP;
   }
+  if (request.tools !== undefined) {
+    params.tools = request.tools;
+  }
 
   return params;
 }

@@ -5,6 +5,13 @@ export interface TextMessage {
   content: string;
 }
 
+export interface ToolDefinition {
+  type: "function";
+  name: string;
+  description?: string;
+  parameters?: unknown;
+}
+
 export interface TextGenerationRequest {
   provider: TextLLMProviderId;
   model: string;
@@ -12,6 +19,7 @@ export interface TextGenerationRequest {
   maxTokens?: number;
   temperature?: number;
   topP?: number;
+  tools?: ToolDefinition[];
 }
 
 export interface ProviderGenerateParams {
@@ -22,12 +30,20 @@ export interface ProviderGenerateParams {
   maxTokens?: number;
   temperature?: number;
   topP?: number;
+  tools?: ToolDefinition[];
+}
+
+export interface ToolCall {
+  id: string;
+  name: string;
+  arguments: string;
 }
 
 export interface TextGenerationResult {
   provider: TextLLMProviderId;
   model: string;
   text: string;
+  toolCalls?: ToolCall[];
   usage?: Record<string, number>;
   rawResponse?: unknown;
 }
@@ -59,6 +75,7 @@ export interface TextSessionSnapshot {
   queuedInstructions: string[];
   queuedToolOutputs: QueuedToolOutputPayload[];
   defaults: TextSessionDefaults;
+  tools?: ToolDefinition[];
   createdAt: number;
   updatedAt: number;
 }

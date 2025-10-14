@@ -5,6 +5,7 @@ import type {
   QueuedToolOutputPayload,
   TextSessionDefaults,
   TextSessionSnapshot,
+  ToolDefinition,
 } from "./types";
 
 interface TextSession {
@@ -15,6 +16,7 @@ interface TextSession {
   queuedInstructions: string[];
   queuedToolOutputs: QueuedToolOutputPayload[];
   defaults: TextSessionDefaults;
+  tools?: ToolDefinition[];
   createdAt: number;
   updatedAt: number;
 }
@@ -66,6 +68,7 @@ export function createTextSession(options: {
   systemPrompt?: string;
   initialMessages?: TextMessage[];
   defaults?: TextSessionDefaults;
+  tools?: ToolDefinition[];
 }): TextSessionSnapshot {
   cleanupExpiredSessions();
 
@@ -81,6 +84,10 @@ export function createTextSession(options: {
     createdAt: now,
     updatedAt: now,
   };
+
+  if (options.tools?.length) {
+    session.tools = options.tools.map((tool) => ({ ...tool }));
+  }
 
   if (options.systemPrompt) {
     session.messages.push({
@@ -160,6 +167,7 @@ export function serializeSession(session: TextSession): TextSessionSnapshot {
     queuedInstructions: [...session.queuedInstructions],
     queuedToolOutputs: cloneToolOutputs(session.queuedToolOutputs),
     defaults: { ...session.defaults },
+    tools: session.tools?.map((tool) => ({ ...tool })),
     createdAt: session.createdAt,
     updatedAt: session.updatedAt,
   };

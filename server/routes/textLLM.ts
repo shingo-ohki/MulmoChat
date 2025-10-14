@@ -256,6 +256,7 @@ router.post("/text/session", (req: Request, res: Response) => {
       maxTokens,
       temperature,
       topP,
+      tools,
     } = req.body as Partial<TextGenerationRequest> & {
       systemPrompt?: unknown;
       messages?: unknown;
@@ -288,6 +289,7 @@ router.post("/text/session", (req: Request, res: Response) => {
           : undefined,
       initialMessages,
       defaults,
+      tools: Array.isArray(tools) ? tools : undefined,
     });
 
     res.status(201).json({
@@ -522,6 +524,9 @@ router.post(
       }
       if (effectiveTopP !== undefined) {
         requestPayload.topP = effectiveTopP;
+      }
+      if (session.tools !== undefined && session.tools.length > 0) {
+        requestPayload.tools = session.tools;
       }
 
       const result = await generateText(requestPayload);

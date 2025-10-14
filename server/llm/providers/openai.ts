@@ -7,11 +7,21 @@ import {
 const OPENAI_CHAT_COMPLETIONS_URL =
   "https://api.openai.com/v1/chat/completions";
 
+interface OpenAIToolCall {
+  id: string;
+  type: "function";
+  function: {
+    name: string;
+    arguments: string;
+  };
+}
+
 interface OpenAIChatCompletionResponse {
   choices: Array<{
     message: {
       role: string;
       content?: string;
+      tool_calls?: OpenAIToolCall[];
     };
   }>;
   usage?: {
@@ -32,22 +42,42 @@ export async function generateWithOpenAI(
     );
   }
 
+  const requestBody: Record<string, unknown> = {
+    model: params.model,
+    messages: params.messages.map((message) => ({
+      role: message.role,
+      content: message.content,
+    })),
+  };
+
+  if (params.maxTokens !== undefined) {
+    requestBody.max_tokens = params.maxTokens;
+  }
+  if (params.temperature !== undefined) {
+    requestBody.temperature = params.temperature;
+  }
+  if (params.topP !== undefined) {
+    requestBody.top_p = params.topP;
+  }
+  if (params.tools !== undefined && params.tools.length > 0) {
+    // Convert from Realtime API format to Chat Completions format
+    requestBody.tools = params.tools.map((tool) => ({
+      type: "function",
+      function: {
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.parameters,
+      },
+    }));
+  }
+
   const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      model: params.model,
-      messages: params.messages.map((message) => ({
-        role: message.role,
-        content: message.content,
-      })),
-      max_tokens: params.maxTokens,
-      temperature: params.temperature,
-      top_p: params.topP,
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {
@@ -59,7 +89,13 @@ export async function generateWithOpenAI(
   }
 
   const data = (await response.json()) as OpenAIChatCompletionResponse;
-  const text = data.choices?.[0]?.message?.content ?? "";
+  const message = data.choices?.[0]?.message;
+  const text = message?.content ?? "";
+  const toolCalls = message?.tool_calls?.map((tc) => ({
+    id: tc.id,
+    name: tc.function.name,
+    arguments: tc.function.arguments,
+  }));
 
   const usage = data.usage
     ? {
@@ -73,6 +109,7 @@ export async function generateWithOpenAI(
     provider: "openai",
     model: params.model,
     text,
+    ...(toolCalls && toolCalls.length > 0 ? { toolCalls } : {}),
     ...(usage ? { usage } : {}),
     rawResponse: data,
   };
