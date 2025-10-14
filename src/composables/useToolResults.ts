@@ -129,6 +129,7 @@ export function useToolResults(
       }
 
       const result = await options.toolExecute(context, msg.name, args);
+      console.log("TOOL RESULT", result);
 
       const previousResult = context.currentResult;
       if (
