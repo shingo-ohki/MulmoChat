@@ -28,7 +28,12 @@ const PROVIDER_MODEL_SUGGESTIONS: Partial<Record<TextLLMProviderId, string[]>> =
   };
 
 function isSupportedRole(role: string): role is TextMessage["role"] {
-  return role === "system" || role === "user" || role === "assistant";
+  return (
+    role === "system" ||
+    role === "user" ||
+    role === "assistant" ||
+    role === "tool"
+  );
 }
 
 function validateMessages(messages: TextMessage[]): void {
@@ -44,9 +49,11 @@ function validateMessages(messages: TextMessage[]): void {
       );
     }
     if (
-      typeof message.content !== "string" ||
-      message.content.trim().length === 0
+      message.tool_calls === undefined &&
+      (typeof message.content !== "string" ||
+        message.content.trim().length === 0)
     ) {
+      console.error("Message content must be a non-empty string", message);
       throw new TextGenerationError(
         "Message content must be a non-empty string",
         400,

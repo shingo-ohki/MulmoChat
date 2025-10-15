@@ -57,7 +57,6 @@ export interface ProviderAvailability {
   models?: string[];
 }
 
-
 export interface TextSessionDefaults {
   maxTokens?: number;
   temperature?: number;

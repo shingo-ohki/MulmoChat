@@ -111,7 +111,6 @@ export function appendSessionMessages(
   touch(session);
 }
 
-
 export function serializeSession(session: TextSession): TextSessionSnapshot {
   return {
     id: session.id,

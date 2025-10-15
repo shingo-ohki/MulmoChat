@@ -173,7 +173,6 @@ function normalizeToolOutputs(value: unknown): NormalizedToolOutput[] {
   return [toPayload(value)];
 }
 
-
 router.get("/text/providers", (_req: Request, res: Response) => {
   res.json({
     success: true,
@@ -397,7 +396,9 @@ router.post(
           {
             role: "assistant",
             content: result.text || "",
-            ...(result.toolCalls?.length ? { tool_calls: result.toolCalls } : {}),
+            ...(result.toolCalls?.length
+              ? { tool_calls: result.toolCalls }
+              : {}),
           },
         ]);
       }
@@ -589,7 +590,9 @@ router.post(
           {
             role: "assistant",
             content: result.text || "", // non-empty string
-            ...(result.toolCalls?.length ? { tool_calls: result.toolCalls } : {}),
+            ...(result.toolCalls?.length
+              ? { tool_calls: result.toolCalls }
+              : {}),
           },
         ]);
       }
