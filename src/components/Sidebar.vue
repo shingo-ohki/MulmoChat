@@ -138,8 +138,8 @@
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       @click.self="showConfigPopup = false"
     >
-      <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <div class="flex justify-between items-center mb-4">
+      <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] flex flex-col">
+        <div class="flex justify-between items-center mb-4 flex-shrink-0">
           <h2 class="text-xl font-semibold">Configuration</h2>
           <button
             @click="showConfigPopup = false"
@@ -149,7 +149,7 @@
           </button>
         </div>
 
-        <div class="space-y-4">
+        <div class="space-y-4 overflow-y-auto flex-1">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
               Mode
@@ -353,15 +353,15 @@
               </label>
             </div>
           </div>
+        </div>
 
-          <div class="flex justify-end">
-            <button
-              @click="showConfigPopup = false"
-              class="px-4 py-2 text-gray-600 hover:text-gray-800"
-            >
-              Close
-            </button>
-          </div>
+        <div class="flex justify-end mt-4 pt-4 border-t flex-shrink-0">
+          <button
+            @click="showConfigPopup = false"
+            class="px-4 py-2 text-gray-600 hover:text-gray-800"
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>
