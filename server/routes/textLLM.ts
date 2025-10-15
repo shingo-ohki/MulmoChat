@@ -440,6 +440,9 @@ router.post(
 
     const role = (req.body?.role ?? "user") as TextMessage["role"];
     const content = req.body?.content;
+
+    console.log("RECEIVED USER MESSAGE", `${session.id}: "${content}", "${role}"`);
+
     const instructionsInput = req.body?.instructions;
     const maxTokens = optionalNumber(req.body?.maxTokens, "maxTokens");
     const temperature = optionalNumber(req.body?.temperature, "temperature");
@@ -467,7 +470,7 @@ router.post(
     if (typeof content !== "string" || !content.trim()) {
       res.status(400).json({
         success: false,
-        error: "Message content must be a non-empty string",
+        error: `Message content must be a non-empty string (${content})`,
       });
       return;
     }
@@ -505,6 +508,7 @@ router.post(
         ...queuedToolOutputMessages,
         userMessage,
       ];
+      console.log("CONVERSATION", conversation);
 
       const requestPayload: TextGenerationRequest = {
         provider: session.provider,
@@ -533,11 +537,15 @@ router.post(
 
       appendSessionMessages(session, [
         userMessage,
-        {
-          role: "assistant",
-          content: result.text,
-        },
       ]);
+      if (result.text) {
+        appendSessionMessages(session, [
+          {
+            role: "assistant",
+            content: result.text,
+          },
+        ]);
+      }
 
       if (Object.keys(providedDefaults).length > 0) {
         updateSessionDefaults(session, providedDefaults);

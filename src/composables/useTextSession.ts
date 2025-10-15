@@ -211,6 +211,7 @@ export function useTextSession(
     if (!id) {
       return false;
     }
+    console.log("SENDING USER MESSAGE", `${id}: "${trimmed}"`);
 
     conversationActive.value = true;
     handlers.onConversationStarted?.();
