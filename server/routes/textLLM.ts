@@ -346,7 +346,7 @@ router.delete("/text/session/:sessionId", (req: Request, res: Response) => {
 
 router.post(
   "/text/session/:sessionId/instructions",
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     const session = getTextSession(req.params.sessionId);
     if (!session) {
       res.status(404).json({
@@ -360,9 +360,72 @@ router.post(
       const instructions = normalizeInstructions(
         req.body?.instructions ?? req.body,
       );
-      queueSessionInstructions(session, instructions);
+
+      console.log("RECEIVED INSTRUCTIONS", `${session.id}: "${instructions.join(', ')}"`);
+
+      // Build instruction messages
+      const instructionMessages = instructions.map(
+        (instruction) => ({
+          role: "system" as const,
+          content: instruction,
+        }),
+      );
+
+      // Also include any queued tool outputs
+      const queuedToolOutputMessages = session.queuedToolOutputs.map(
+        (item) => ({
+          role: "system" as const,
+          content: buildToolOutputMessage(item),
+        }),
+      );
+
+      // Build conversation with all queued messages
+      const conversation: TextMessage[] = [
+        ...session.messages,
+        ...instructionMessages,
+        ...queuedToolOutputMessages,
+      ];
+
+      console.log("INSTRUCTION CONVERSATION", conversation);
+
+      const requestPayload: TextGenerationRequest = {
+        provider: session.provider,
+        model: session.model,
+        messages: conversation,
+      };
+
+      if (session.defaults.maxTokens !== undefined) {
+        requestPayload.maxTokens = session.defaults.maxTokens;
+      }
+      if (session.defaults.temperature !== undefined) {
+        requestPayload.temperature = session.defaults.temperature;
+      }
+      if (session.defaults.topP !== undefined) {
+        requestPayload.topP = session.defaults.topP;
+      }
+      if (session.tools !== undefined && session.tools.length > 0) {
+        requestPayload.tools = session.tools;
+      }
+
+      // Generate response
+      const result = await generateText(requestPayload);
+
+      // Append assistant response to session
+      if (result.text) {
+        appendSessionMessages(session, [
+          {
+            role: "assistant",
+            content: result.text,
+          },
+        ]);
+      }
+
+      // Clear queued tool outputs
+      clearSessionQueues(session);
+
       res.json({
         success: true,
+        result,
         session: serializeSession(session),
       });
     } catch (error: unknown) {
@@ -378,7 +441,7 @@ router.post(
         error instanceof Error ? error.message : "Unknown error";
       res.status(500).json({
         success: false,
-        error: "Failed to enqueue instructions",
+        error: "Failed to process instructions",
         details: errorMessage,
       });
     }

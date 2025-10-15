@@ -353,8 +353,14 @@ export function useTextSession(
     void (async () => {
       const id = await ensureSession();
       if (!id) return;
+
+      conversationActive.value = true;
+      handlers.onConversationStarted?.();
+
       try {
-        await fetch(
+        console.log("SENDING INSTRUCTIONS", `${id}: "${trimmed}"`);
+
+        const response = await fetch(
           `/api/text/session/${encodeURIComponent(id)}/instructions`,
           {
             method: "POST",
@@ -364,8 +370,81 @@ export function useTextSession(
             body: JSON.stringify({ instructions: trimmed }),
           },
         );
+
+        if (!response.ok) {
+          const errorBody = await response.text();
+          console.error("Instructions API error:", response.status, errorBody);
+          throw new Error(`API error: ${response.statusText} - ${errorBody}`);
+        }
+
+        const payload = (await response.json()) as {
+          success?: boolean;
+          result?: {
+            text?: string;
+            toolCalls?: Array<{ id: string; name: string; arguments: string }>;
+          };
+          session?: { messages?: TextMessage[] };
+          error?: unknown;
+        };
+
+        if (!payload.success) {
+          throw new Error(
+            typeof payload.error === "string"
+              ? payload.error
+              : "Instruction processing failed",
+          );
+        }
+
+        const assistantText = payload.result?.text ?? "";
+        const toolCalls = payload.result?.toolCalls;
+
+        // Update conversation messages
+        if (payload.session?.messages) {
+          conversationMessages.value = payload.session.messages;
+        }
+
+        // Handle tool calls if present
+        if (toolCalls && toolCalls.length > 0) {
+          for (const toolCall of toolCalls) {
+            handlers.onToolCall?.(
+              {
+                type: "response.function_call_arguments.done",
+                name: toolCall.name,
+                call_id: toolCall.id,
+              },
+              toolCall.id,
+              toolCall.arguments,
+            );
+          }
+        }
+
+        // Always show text response if there's any text
+        if (assistantText) {
+          handlers.onTextDelta?.(assistantText);
+          handlers.onTextCompleted?.();
+
+          const callId = createCallId();
+          handlers.onToolCall?.(
+            {
+              type: "response.function_call_arguments.done",
+              name: "text-response",
+              // Intentionally omit call_id so the pseudo tool doesn't trigger
+              // sendFunctionCallOutput back to the LLM transport.
+            },
+            callId,
+            JSON.stringify({
+              text: assistantText,
+              role: "assistant",
+              transportKind: "text-rest",
+            }),
+          );
+        }
       } catch (error) {
+        console.error("Instructions request failed", error);
         handlers.onError?.(error);
+      } finally {
+        conversationActive.value = false;
+        handlers.onConversationFinished?.();
       }
     })();
     return true;
