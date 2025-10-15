@@ -516,8 +516,7 @@ function handleEnterKey(event: KeyboardEvent): void {
   // Submit the message
   event.preventDefault();
   emit("sendTextMessage");
-  // Clear the input after sending
-  emit("update:userInput", "");
+  // Note: Input is cleared by App.vue after successfully sending
 }
 
 defineExpose({
