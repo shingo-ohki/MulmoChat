@@ -44,10 +44,31 @@ export async function generateWithOpenAI(
 
   const requestBody: Record<string, unknown> = {
     model: params.model,
-    messages: params.messages.map((message) => ({
-      role: message.role,
-      content: message.content,
-    })),
+    messages: params.messages.map((message) => {
+      const baseMessage: Record<string, unknown> = {
+        role: message.role,
+        content: message.content,
+      };
+
+      // Include tool_call_id for tool messages
+      if (message.role === "tool" && message.tool_call_id) {
+        baseMessage.tool_call_id = message.tool_call_id;
+      }
+
+      // Include tool_calls for assistant messages
+      if (message.role === "assistant" && message.tool_calls) {
+        baseMessage.tool_calls = message.tool_calls.map((tc) => ({
+          id: tc.id,
+          type: "function",
+          function: {
+            name: tc.name,
+            arguments: tc.arguments,
+          },
+        }));
+      }
+
+      return baseMessage;
+    }),
   };
 
   if (params.maxTokens !== undefined) {

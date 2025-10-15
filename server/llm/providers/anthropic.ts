@@ -13,12 +13,19 @@ function toAnthropicMessages(messages: TextMessage[]) {
   return messages.map((message) => {
     const role: AnthropicRole =
       message.role === "assistant" ? "assistant" : "user";
+
+    // For tool messages, convert to user message with formatted content
+    let content: string = message.content;
+    if (message.role === "tool" && message.tool_call_id) {
+      content = `Tool output (${message.tool_call_id}): ${message.content}`;
+    }
+
     return {
       role,
       content: [
         {
           type: "text" as const,
-          text: message.content,
+          text: content,
         },
       ],
     };

@@ -9,12 +9,9 @@ import {
 } from "../llm/types";
 import {
   appendSessionMessages,
-  clearSessionQueues,
   createTextSession,
   deleteTextSession,
   getTextSession,
-  queueSessionInstructions,
-  queueSessionToolOutputs,
   serializeSession,
   updateSessionDefaults,
 } from "../llm/textSessionStore";
@@ -176,12 +173,6 @@ function normalizeToolOutputs(value: unknown): NormalizedToolOutput[] {
   return [toPayload(value)];
 }
 
-function buildToolOutputMessage({
-  callId,
-  output,
-}: NormalizedToolOutput): string {
-  return `Tool output (${callId}): ${output}`;
-}
 
 router.get("/text/providers", (_req: Request, res: Response) => {
   res.json({
@@ -361,37 +352,27 @@ router.post(
         req.body?.instructions ?? req.body,
       );
 
-      console.log("RECEIVED INSTRUCTIONS", `${session.id}: "${instructions.join(', ')}"`);
+      console.log(
+        "RECEIVED INSTRUCTIONS",
+        `${session.id}: "${instructions.join(", ")}"`,
+      );
 
-      // Build instruction messages
-      const instructionMessages = instructions.map(
+      // Append instructions as system messages immediately
+      const instructionMessages: TextMessage[] = instructions.map(
         (instruction) => ({
           role: "system" as const,
           content: instruction,
         }),
       );
 
-      // Also include any queued tool outputs
-      const queuedToolOutputMessages = session.queuedToolOutputs.map(
-        (item) => ({
-          role: "system" as const,
-          content: buildToolOutputMessage(item),
-        }),
-      );
+      appendSessionMessages(session, instructionMessages);
 
-      // Build conversation with all queued messages
-      const conversation: TextMessage[] = [
-        ...session.messages,
-        ...instructionMessages,
-        ...queuedToolOutputMessages,
-      ];
-
-      console.log("INSTRUCTION CONVERSATION", conversation);
+      console.log("INSTRUCTION CONVERSATION", session.messages);
 
       const requestPayload: TextGenerationRequest = {
         provider: session.provider,
         model: session.model,
-        messages: conversation,
+        messages: session.messages,
       };
 
       if (session.defaults.maxTokens !== undefined) {
@@ -410,18 +391,16 @@ router.post(
       // Generate response
       const result = await generateText(requestPayload);
 
-      // Append assistant response to session
-      if (result.text) {
+      // Append assistant response (including tool_calls if present)
+      if (result.text || result.toolCalls) {
         appendSessionMessages(session, [
           {
             role: "assistant",
-            content: result.text,
+            content: result.text || "",
+            ...(result.toolCalls?.length ? { tool_calls: result.toolCalls } : {}),
           },
         ]);
       }
-
-      // Clear queued tool outputs
-      clearSessionQueues(session);
 
       res.json({
         success: true,
@@ -464,7 +443,18 @@ router.post(
       const parsedOutputs = normalizeToolOutputs(
         req.body?.toolOutputs ?? req.body,
       );
-      queueSessionToolOutputs(session, parsedOutputs);
+
+      // Append tool outputs as tool messages immediately
+      const toolOutputMessages: TextMessage[] = parsedOutputs.map(
+        ({ callId, output }) => ({
+          role: "tool" as const,
+          tool_call_id: callId,
+          content: output,
+        }),
+      );
+
+      appendSessionMessages(session, toolOutputMessages);
+
       res.json({
         success: true,
         session: serializeSession(session),
@@ -482,7 +472,7 @@ router.post(
         error instanceof Error ? error.message : "Unknown error";
       res.status(500).json({
         success: false,
-        error: "Failed to enqueue tool output",
+        error: "Failed to append tool output",
         details: errorMessage,
       });
     }
@@ -504,7 +494,10 @@ router.post(
     const role = (req.body?.role ?? "user") as TextMessage["role"];
     const content = req.body?.content;
 
-    console.log("RECEIVED USER MESSAGE", `${session.id}: "${content}", "${role}"`);
+    console.log(
+      "RECEIVED USER MESSAGE",
+      `${session.id}: "${content}", "${role}"`,
+    );
 
     const instructionsInput = req.body?.instructions;
     const maxTokens = optionalNumber(req.body?.maxTokens, "maxTokens");
@@ -545,38 +538,30 @@ router.post(
 
       validateGenerationDefaults(providedDefaults);
 
-      queueSessionInstructions(session, newInstructions);
+      // If instructions provided, append them first as system messages
+      if (newInstructions.length > 0) {
+        const instructionMessages: TextMessage[] = newInstructions.map(
+          (instruction) => ({
+            role: "system" as const,
+            content: instruction,
+          }),
+        );
+        appendSessionMessages(session, instructionMessages);
+      }
 
-      const queuedInstructionMessages = session.queuedInstructions.map(
-        (instruction) => ({
-          role: "system" as const,
-          content: instruction,
-        }),
-      );
-      const queuedToolOutputMessages = session.queuedToolOutputs.map(
-        (item) => ({
-          role: "system" as const,
-          content: buildToolOutputMessage(item),
-        }),
-      );
-
+      // Append user message
       const userMessage: TextMessage = {
         role: "user",
         content: trimmedContent,
       };
+      appendSessionMessages(session, [userMessage]);
 
-      const conversation: TextMessage[] = [
-        ...session.messages,
-        ...queuedInstructionMessages,
-        ...queuedToolOutputMessages,
-        userMessage,
-      ];
-      console.log("CONVERSATION", conversation);
+      console.log("CONVERSATION", session.messages);
 
       const requestPayload: TextGenerationRequest = {
         provider: session.provider,
         model: session.model,
-        messages: conversation,
+        messages: session.messages,
       };
 
       const effectiveMaxTokens = maxTokens ?? session.defaults.maxTokens;
@@ -598,14 +583,13 @@ router.post(
 
       const result = await generateText(requestPayload);
 
-      appendSessionMessages(session, [
-        userMessage,
-      ]);
-      if (result.text) {
+      // Append assistant response (including tool_calls if present)
+      if (result.text || result.toolCalls) {
         appendSessionMessages(session, [
           {
             role: "assistant",
-            content: result.text,
+            content: result.text || "", // non-empty string
+            ...(result.toolCalls?.length ? { tool_calls: result.toolCalls } : {}),
           },
         ]);
       }
@@ -613,8 +597,6 @@ router.post(
       if (Object.keys(providedDefaults).length > 0) {
         updateSessionDefaults(session, providedDefaults);
       }
-
-      clearSessionQueues(session);
 
       res.json({
         success: true,

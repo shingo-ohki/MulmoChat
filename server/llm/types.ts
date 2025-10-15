@@ -1,8 +1,10 @@
 export type TextLLMProviderId = "openai" | "anthropic" | "google" | "ollama";
 
 export interface TextMessage {
-  role: "system" | "user" | "assistant";
+  role: "system" | "user" | "assistant" | "tool";
   content: string;
+  tool_call_id?: string; // Required when role is "tool"
+  tool_calls?: ToolCall[]; // Present when assistant makes tool calls
 }
 
 export interface ToolDefinition {
@@ -55,11 +57,6 @@ export interface ProviderAvailability {
   models?: string[];
 }
 
-export interface QueuedToolOutputPayload {
-  callId: string;
-  output: string;
-  addedAt: number;
-}
 
 export interface TextSessionDefaults {
   maxTokens?: number;
@@ -72,8 +69,6 @@ export interface TextSessionSnapshot {
   provider: TextLLMProviderId;
   model: string;
   messages: TextMessage[];
-  queuedInstructions: string[];
-  queuedToolOutputs: QueuedToolOutputPayload[];
   defaults: TextSessionDefaults;
   tools?: ToolDefinition[];
   createdAt: number;

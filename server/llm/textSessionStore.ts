@@ -2,7 +2,6 @@ import { randomUUID } from "crypto";
 import type {
   TextMessage,
   TextLLMProviderId,
-  QueuedToolOutputPayload,
   TextSessionDefaults,
   TextSessionSnapshot,
   ToolDefinition,
@@ -13,8 +12,6 @@ interface TextSession {
   provider: TextLLMProviderId;
   model: string;
   messages: TextMessage[];
-  queuedInstructions: string[];
-  queuedToolOutputs: QueuedToolOutputPayload[];
   defaults: TextSessionDefaults;
   tools?: ToolDefinition[];
   createdAt: number;
@@ -28,12 +25,6 @@ const sessions = new Map<string, TextSession>();
 
 function cloneMessages(messages: TextMessage[]): TextMessage[] {
   return messages.map((msg) => ({ ...msg }));
-}
-
-function cloneToolOutputs(
-  outputs: QueuedToolOutputPayload[],
-): QueuedToolOutputPayload[] {
-  return outputs.map((output) => ({ ...output }));
 }
 
 function cleanupExpiredSessions(): void {
@@ -78,8 +69,6 @@ export function createTextSession(options: {
     provider: options.provider,
     model: options.model,
     messages: [],
-    queuedInstructions: [],
-    queuedToolOutputs: [],
     defaults: options.defaults ? { ...options.defaults } : {},
     createdAt: now,
     updatedAt: now,
@@ -122,41 +111,6 @@ export function appendSessionMessages(
   touch(session);
 }
 
-export function queueSessionInstructions(
-  session: TextSession,
-  instructions: string[],
-): void {
-  if (!instructions.length) return;
-  session.queuedInstructions.push(...instructions);
-  touch(session);
-}
-
-export function queueSessionToolOutputs(
-  session: TextSession,
-  outputs: Array<Omit<QueuedToolOutputPayload, "addedAt">>,
-): void {
-  if (!outputs.length) return;
-  const timestamp = Date.now();
-  for (const output of outputs) {
-    session.queuedToolOutputs.push({
-      ...output,
-      addedAt: timestamp,
-    });
-  }
-  touch(session);
-}
-
-export function clearSessionQueues(session: TextSession): void {
-  if (
-    session.queuedInstructions.length === 0 &&
-    session.queuedToolOutputs.length === 0
-  ) {
-    return;
-  }
-  session.queuedInstructions = [];
-  session.queuedToolOutputs = [];
-  touch(session);
-}
 
 export function serializeSession(session: TextSession): TextSessionSnapshot {
   return {
@@ -164,8 +118,6 @@ export function serializeSession(session: TextSession): TextSessionSnapshot {
     provider: session.provider,
     model: session.model,
     messages: cloneMessages(session.messages),
-    queuedInstructions: [...session.queuedInstructions],
-    queuedToolOutputs: cloneToolOutputs(session.queuedToolOutputs),
     defaults: { ...session.defaults },
     tools: session.tools?.map((tool) => ({ ...tool })),
     createdAt: session.createdAt,
