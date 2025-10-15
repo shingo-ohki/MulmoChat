@@ -333,6 +333,11 @@ async function sendTextMessage(providedText?: string): Promise<void> {
   const text = (providedText || userInput.value).trim();
   if (!text) return;
 
+  // In text-rest mode, auto-start the session if not active
+  if (transportKind.value === "text-rest" && !chatActive.value && !connecting.value) {
+    await startChat();
+  }
+
   // Add user message as a tool result for conversation history
   // Only add if it's from the user input box (not providedText from other sources)
   if (!providedText) {

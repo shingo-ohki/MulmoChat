@@ -109,7 +109,7 @@
             $emit('update:userInput', ($event.target as HTMLInputElement).value)
           "
           @keydown.enter="handleEnterKey"
-          :disabled="!chatActive"
+          :disabled="!chatActive && modelKind === 'voice-realtime'"
           type="text"
           placeholder="Type a message"
           class="flex-1 min-w-0 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
@@ -125,7 +125,7 @@
       />
       <button
         @click="$emit('sendTextMessage')"
-        :disabled="!chatActive || !userInput.trim()"
+        :disabled="(modelKind === 'voice-realtime' && !chatActive) || !userInput.trim()"
         class="w-full px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
       >
         Send Message
@@ -507,8 +507,14 @@ function getModeIcon(): string {
 }
 
 function handleEnterKey(event: KeyboardEvent): void {
-  // Don't submit if text is empty or chat is not active
-  if (!props.chatActive || !props.userInput.trim()) {
+  // Don't submit if text is empty
+  if (!props.userInput.trim()) {
+    event.preventDefault();
+    return;
+  }
+
+  // In voice mode, don't submit if chat is not active
+  if (props.modelKind === "voice-realtime" && !props.chatActive) {
     event.preventDefault();
     return;
   }
