@@ -43,7 +43,7 @@ const toolDefinition = {
       board: {
         type: "array",
         description:
-          "Current 8x8 board state (required for 'move' and 'pass' actions)",
+          "Current 8x8 board state BEFORE the move (required for 'move' and 'pass' actions). IMPORTANT: Do NOT modify the board yourself - pass the current board state as-is, and the game logic will handle placing the piece and flipping opponent pieces.",
         items: {
           type: "array",
           items: {

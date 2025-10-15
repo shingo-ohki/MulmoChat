@@ -334,7 +334,11 @@ async function sendTextMessage(providedText?: string): Promise<void> {
   if (!text) return;
 
   // In text-rest mode, auto-start the session if not active
-  if (transportKind.value === "text-rest" && !chatActive.value && !connecting.value) {
+  if (
+    transportKind.value === "text-rest" &&
+    !chatActive.value &&
+    !connecting.value
+  ) {
     await startChat();
   }
 

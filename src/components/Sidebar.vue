@@ -125,7 +125,9 @@
       />
       <button
         @click="$emit('sendTextMessage')"
-        :disabled="(modelKind === 'voice-realtime' && !chatActive) || !userInput.trim()"
+        :disabled="
+          (modelKind === 'voice-realtime' && !chatActive) || !userInput.trim()
+        "
         class="w-full px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
       >
         Send Message
@@ -138,7 +140,9 @@
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       @click.self="showConfigPopup = false"
     >
-      <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] flex flex-col">
+      <div
+        class="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] flex flex-col"
+      >
         <div class="flex justify-between items-center mb-4 flex-shrink-0">
           <h2 class="text-xl font-semibold">Configuration</h2>
           <button
