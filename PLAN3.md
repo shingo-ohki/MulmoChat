@@ -26,17 +26,28 @@ Remove the queuing system for instructions and tool outputs in the text session 
 
 ### Direct Message Appending
 - Remove `queuedInstructions` and `queuedToolOutputs` from session state
-- Immediately append instructions and tool outputs to `session.messages` as system messages
+- Immediately append instructions to `session.messages` as **system messages**
+- Immediately append tool outputs to `session.messages` as **tool messages** (role: "tool")
 - All messages persist in conversation history for future reference
 
 ### New Flow
-1. Client calls `/text/session/:sessionId/tool-output` → outputs immediately appended to `session.messages` as system messages
-2. Client calls `/text/session/:sessionId/instructions` → instructions immediately appended to `session.messages` as system messages
-3. Client calls `/text/session/:sessionId/message` → user message appended, LLM called with full history, assistant response appended
+1. Client calls `/text/session/:sessionId/tool-output` → outputs immediately appended to `session.messages` as **tool messages** (role: "tool", tool_call_id: "xxx")
+2. Client calls `/text/session/:sessionId/instructions` → instructions immediately appended to `session.messages` as **system messages**
+3. Client calls `/text/session/:sessionId/message` → user message appended, LLM called with full history, assistant response (with tool_calls if any) appended
 
 ## Implementation Changes
 
 ### 1. Type Definitions (server/llm/types.ts)
+
+**Update `TextMessage` to support tool role:**
+```typescript
+export interface TextMessage {
+  role: "system" | "user" | "assistant" | "tool";
+  content: string;
+  tool_call_id?: string; // Required when role is "tool"
+  tool_calls?: ToolCall[]; // Present when assistant makes tool calls
+}
+```
 
 **Remove from `TextSessionSnapshot`:**
 ```typescript
@@ -44,14 +55,7 @@ queuedInstructions: string[];
 queuedToolOutputs: QueuedToolOutputPayload[];
 ```
 
-**Keep `QueuedToolOutputPayload`** (rename to `ToolOutputPayload` since it's no longer "queued"):
-```typescript
-export interface ToolOutputPayload {
-  callId: string;
-  output: string;
-  addedAt: number; // Keep for potential future use
-}
-```
+**Remove `QueuedToolOutputPayload`** (no longer needed - tool outputs become regular messages)
 
 ### 2. Session Store (server/llm/textSessionStore.ts)
 
@@ -83,7 +87,7 @@ clearSessionQueues,
 
 #### POST `/text/session/:sessionId/tool-output`
 **Current behavior:** Queues tool outputs
-**New behavior:** Append tool outputs to messages immediately
+**New behavior:** Append tool outputs as tool messages immediately
 
 ```typescript
 router.post("/text/session/:sessionId/tool-output", (req, res) => {
@@ -91,10 +95,11 @@ router.post("/text/session/:sessionId/tool-output", (req, res) => {
 
   const parsedOutputs = normalizeToolOutputs(req.body?.toolOutputs ?? req.body);
 
-  // NEW: Append tool outputs as system messages immediately
+  // NEW: Append tool outputs as tool messages immediately
   const toolOutputMessages = parsedOutputs.map(({ callId, output }) => ({
-    role: "system" as const,
-    content: `Tool output (${callId}): ${output}`,
+    role: "tool" as const,
+    tool_call_id: callId,
+    content: output,
   }));
 
   appendSessionMessages(session, toolOutputMessages);
@@ -135,10 +140,14 @@ router.post("/text/session/:sessionId/instructions", async (req, res) => {
 
   const result = await generateText(requestPayload);
 
-  // Append assistant response
-  if (result.text) {
+  // Append assistant response (including tool_calls if present)
+  if (result.text || result.toolCalls) {
     appendSessionMessages(session, [
-      { role: "assistant", content: result.text },
+      {
+        role: "assistant",
+        content: result.text || "",
+        ...(result.toolCalls?.length ? { tool_calls: result.toolCalls } : {})
+      },
     ]);
   }
 
@@ -185,10 +194,14 @@ router.post("/text/session/:sessionId/message", async (req, res) => {
 
   const result = await generateText(requestPayload);
 
-  // Append assistant response
-  if (result.text) {
+  // Append assistant response (including tool_calls if present)
+  if (result.text || result.toolCalls) {
     appendSessionMessages(session, [
-      { role: "assistant", content: result.text },
+      {
+        role: "assistant",
+        content: result.text || "",
+        ...(result.toolCalls?.length ? { tool_calls: result.toolCalls } : {})
+      },
     ]);
   }
 
@@ -209,8 +222,42 @@ router.post("/text/session/:sessionId/message", async (req, res) => {
 - **No data migration needed** - Session store is in-memory only
 - **Voice API unaffected** - Changes only affect `server/llm/textSessionStore.ts` and `server/routes/textLLM.ts`
 
+## Additional Considerations
+
+### Provider-Specific Message Handling
+
+Different LLM providers handle tool messages differently:
+
+1. **OpenAI**: Supports `role: "tool"` with `tool_call_id` natively
+2. **Anthropic**: Does not support `role: "tool"` - converts all non-user/assistant to user messages
+3. **Google/Ollama**: May have different tool message formats
+
+**Solution**: Provider adapters in `server/llm/providers/*` should handle conversion:
+- OpenAI: Pass tool messages as-is
+- Anthropic: Convert tool messages to user messages with formatted content
+- Others: Implement appropriate conversions
+
+### Tool Call Persistence
+
+When the assistant makes tool calls:
+```typescript
+{
+  role: "assistant",
+  content: "",
+  tool_calls: [
+    { id: "call_abc123", name: "get_weather", arguments: "{\"location\":\"Tokyo\"}" }
+  ]
+}
+```
+
+This must be saved to `session.messages` so the subsequent tool output can reference `tool_call_id: "call_abc123"`.
+
 ## Files to Modify
 
-1. `server/llm/types.ts` - Remove queue fields from `TextSessionSnapshot`
+1. `server/llm/types.ts` - Update `TextMessage` interface, remove queue fields from `TextSessionSnapshot`
 2. `server/llm/textSessionStore.ts` - Remove queue state and functions
-3. `server/routes/textLLM.ts` - Update all three endpoints to append messages immediately
+3. `server/routes/textLLM.ts` - Update all three endpoints to append messages immediately with proper roles
+4. `server/llm/providers/openai.ts` - Update message serialization to handle tool messages and tool_calls
+5. `server/llm/providers/anthropic.ts` - Add conversion logic for tool messages → user messages
+6. `server/llm/providers/google.ts` - Add provider-specific tool message handling
+7. `server/llm/providers/ollama.ts` - Add provider-specific tool message handling
