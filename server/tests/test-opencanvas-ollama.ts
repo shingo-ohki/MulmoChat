@@ -25,6 +25,11 @@ const openCanvasTool = {
   name: "openCanvas",
   description:
     "Open a drawing canvas for the user to create drawings, sketches, or diagrams.",
+  parameters: {
+    type: "object",
+    properties: {},
+    required: [],
+  },
 };
 
 async function main(): Promise<void> {

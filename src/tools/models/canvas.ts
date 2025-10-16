@@ -10,6 +10,11 @@ const toolDefinition = {
   name: toolName,
   description:
     "Open a drawing canvas for the user to create drawings, sketches, or diagrams.",
+  parameters: {
+    type: "object" as const,
+    properties: {},
+    required: [],
+  },
 };
 
 const openCanvas = async (

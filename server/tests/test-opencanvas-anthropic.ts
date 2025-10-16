@@ -20,11 +20,17 @@ interface GenerateResponse {
 }
 
 // Define the openCanvas tool - matches the actual tool definition
+// Note: Anthropic requires parameters/input_schema even if empty
 const openCanvasTool = {
   type: "function",
   name: "openCanvas",
   description:
     "Open a drawing canvas for the user to create drawings, sketches, or diagrams.",
+  parameters: {
+    type: "object",
+    properties: {},
+    required: [],
+  },
 };
 
 async function main(): Promise<void> {
