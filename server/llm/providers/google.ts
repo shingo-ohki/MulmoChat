@@ -4,20 +4,66 @@ import {
   type ProviderGenerateParams,
   type TextGenerationResult,
   type TextMessage,
+  type ToolCall,
 } from "../types";
 
 type GeminiRole = "user" | "model";
 
+type GeminiPart =
+  | { text: string }
+  | { functionCall: { name: string; args: Record<string, unknown> } }
+  | { functionResponse: { name: string; response: Record<string, unknown> } };
+
 type GeminiContent = {
   role: GeminiRole;
-  parts: Array<{ text: string }>;
+  parts: GeminiPart[];
 };
 
 function toGeminiRole(role: TextMessage["role"]): GeminiRole {
   return role === "assistant" ? "model" : "user";
 }
 
-function extractPrimaryText(candidates: unknown): string {
+function toGeminiMessages(messages: TextMessage[]): GeminiContent[] {
+  return messages.map((message) => {
+    const role = toGeminiRole(message.role);
+    const parts: GeminiPart[] = [];
+
+    // Handle tool result messages
+    if (message.role === "tool" && message.tool_call_id) {
+      // Extract function name from the assistant's tool call
+      // We need to find the corresponding tool call to get the function name
+      // For now, we'll include it in the response
+      parts.push({
+        functionResponse: {
+          name: message.tool_call_id, // This should be the function name
+          response: { result: message.content },
+        },
+      });
+    }
+    // Handle assistant messages with tool calls
+    else if (message.role === "assistant" && message.tool_calls) {
+      if (message.content) {
+        parts.push({ text: message.content });
+      }
+      for (const toolCall of message.tool_calls) {
+        parts.push({
+          functionCall: {
+            name: toolCall.name,
+            args: JSON.parse(toolCall.arguments),
+          },
+        });
+      }
+    }
+    // Regular text messages
+    else {
+      parts.push({ text: message.content });
+    }
+
+    return { role, parts };
+  });
+}
+
+function extractTextFromCandidates(candidates: unknown): string {
   if (!Array.isArray(candidates)) return "";
   for (const candidate of candidates) {
     const content = (
@@ -32,6 +78,37 @@ function extractPrimaryText(candidates: unknown): string {
     }
   }
   return "";
+}
+
+function extractToolCallsFromCandidates(candidates: unknown): ToolCall[] {
+  const toolCalls: ToolCall[] = [];
+  if (!Array.isArray(candidates)) return toolCalls;
+
+  for (const candidate of candidates) {
+    const content = (
+      candidate as {
+        content?: {
+          parts?: Array<{
+            functionCall?: { name: string; args: Record<string, unknown> };
+          }>;
+        };
+      }
+    ).content;
+    const parts = content?.parts;
+    if (!Array.isArray(parts)) continue;
+
+    for (const part of parts) {
+      if (part?.functionCall) {
+        toolCalls.push({
+          id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          name: part.functionCall.name,
+          arguments: JSON.stringify(part.functionCall.args),
+        });
+      }
+    }
+  }
+
+  return toolCalls;
 }
 
 function normalizeModelId(model: string): string {
@@ -54,12 +131,7 @@ export async function generateWithGoogle(
 
   const ai = new GoogleGenAI({ apiKey });
 
-  const contents: GeminiContent[] = params.conversationMessages.map(
-    (message) => ({
-      role: toGeminiRole(message.role),
-      parts: [{ text: message.content }],
-    }),
-  );
+  const contents = toGeminiMessages(params.conversationMessages);
 
   if (params.systemPrompt) {
     contents.unshift({
@@ -88,9 +160,24 @@ export async function generateWithGoogle(
     requestBody.generationConfig = Object.fromEntries(generationConfigEntries);
   }
 
+  // Add tools if provided
+  if (params.tools !== undefined && params.tools.length > 0) {
+    requestBody.tools = [
+      {
+        functionDeclarations: params.tools.map((tool) => ({
+          name: tool.name,
+          description: tool.description,
+          parameters: tool.parameters,
+        })),
+      },
+    ];
+  }
+
   const response = await ai.models.generateContent(requestBody as any);
 
-  const text = extractPrimaryText(response.candidates) ?? "";
+  const text = extractTextFromCandidates(response.candidates) ?? "";
+  const toolCalls = extractToolCallsFromCandidates(response.candidates);
+
   const usageMetadata = (response.response ?? response)?.usageMetadata;
   const usage = usageMetadata
     ? {
@@ -104,6 +191,7 @@ export async function generateWithGoogle(
     provider: "google",
     model: params.model,
     text,
+    ...(toolCalls.length > 0 ? { toolCalls } : {}),
     ...(usage ? { usage } : {}),
     rawResponse: response,
   };

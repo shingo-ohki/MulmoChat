@@ -5,6 +5,7 @@ import {
   type ProviderGenerateParams,
   type TextGenerationResult,
   type TextMessage,
+  type ToolCall,
 } from "../types";
 
 type AnthropicRole = "user" | "assistant";
@@ -14,10 +15,46 @@ function toAnthropicMessages(messages: TextMessage[]) {
     const role: AnthropicRole =
       message.role === "assistant" ? "assistant" : "user";
 
-    // For tool messages, convert to user message with formatted content
-    let content: string = message.content;
+    // For tool messages, use Anthropic's tool_result content type
     if (message.role === "tool" && message.tool_call_id) {
-      content = `Tool output (${message.tool_call_id}): ${message.content}`;
+      return {
+        role: "user" as const,
+        content: [
+          {
+            type: "tool_result" as const,
+            tool_use_id: message.tool_call_id,
+            content: message.content,
+          },
+        ],
+      };
+    }
+
+    // For assistant messages with tool calls
+    if (message.role === "assistant" && message.tool_calls) {
+      const content: Array<{ type: string; [key: string]: unknown }> = [];
+
+      // Add text content if present
+      if (message.content) {
+        content.push({
+          type: "text",
+          text: message.content,
+        });
+      }
+
+      // Add tool use blocks
+      for (const toolCall of message.tool_calls) {
+        content.push({
+          type: "tool_use",
+          id: toolCall.id,
+          name: toolCall.name,
+          input: JSON.parse(toolCall.arguments),
+        });
+      }
+
+      return {
+        role: "assistant" as const,
+        content,
+      };
     }
 
     return {
@@ -25,7 +62,7 @@ function toAnthropicMessages(messages: TextMessage[]) {
       content: [
         {
           type: "text" as const,
-          text: content,
+          text: message.content,
         },
       ],
     };
@@ -60,6 +97,13 @@ export async function generateWithAnthropic(
   if (params.systemPrompt) {
     messageParams.system = params.systemPrompt;
   }
+  if (params.tools !== undefined && params.tools.length > 0) {
+    messageParams.tools = params.tools.map((tool) => ({
+      name: tool.name,
+      description: tool.description,
+      input_schema: tool.parameters as Record<string, unknown>,
+    }));
+  }
 
   const response = await client.messages.create(messageParams);
 
@@ -67,6 +111,18 @@ export async function generateWithAnthropic(
     .filter((part) => part.type === "text")
     .map((part) => part.text)
     .join("");
+
+  // Extract tool calls from response
+  const toolCalls: ToolCall[] = [];
+  for (const block of response.content) {
+    if (block.type === "tool_use") {
+      toolCalls.push({
+        id: block.id,
+        name: block.name,
+        arguments: JSON.stringify(block.input),
+      });
+    }
+  }
 
   const usage = response.usage
     ? {
@@ -82,6 +138,7 @@ export async function generateWithAnthropic(
     provider: "anthropic",
     model: params.model,
     text,
+    ...(toolCalls.length > 0 ? { toolCalls } : {}),
     ...(usage ? { usage } : {}),
     rawResponse: response,
   };
