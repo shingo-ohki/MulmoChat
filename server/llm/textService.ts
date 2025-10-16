@@ -21,7 +21,7 @@ const DEFAULT_MODELS: Record<TextLLMProviderId, string> = {
 
 const PROVIDER_MODEL_SUGGESTIONS: Partial<Record<TextLLMProviderId, string[]>> =
   {
-    openai: ["gpt-4o", "gpt-4o-mini", "gpt-4.1-mini"],
+    openai: ["gpt-5", "gpt-5-mini", "gpt-5-nano", "gpt-4.1", "gpt-4o", "gpt-4o-mini", "gpt-4.1-mini"],
     anthropic: ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"],
     google: ["gemini-2.5-pro", "gemini-2.5-flash"],
     ollama: ["gpt-oss:20b", "llama3", "llama3.1", "phi3"],
