@@ -39,6 +39,8 @@ function parseMessages(value: unknown): TextMessage[] {
 
     const role = (message as { role?: unknown }).role;
     const content = (message as { content?: unknown }).content;
+    const tool_call_id = (message as { tool_call_id?: unknown }).tool_call_id;
+    const tool_calls = (message as { tool_calls?: unknown }).tool_calls;
 
     if (typeof role !== "string" || typeof content !== "string") {
       throw new TextGenerationError(
@@ -47,14 +49,31 @@ function parseMessages(value: unknown): TextMessage[] {
       );
     }
 
-    if (role !== "system" && role !== "user" && role !== "assistant") {
+    if (
+      role !== "system" &&
+      role !== "user" &&
+      role !== "assistant" &&
+      role !== "tool"
+    ) {
       throw new TextGenerationError(`Unsupported message role: ${role}`, 400);
     }
 
-    return {
+    const baseMessage: TextMessage = {
       role: role as TextMessage["role"],
       content,
     };
+
+    // Add tool_call_id for tool messages
+    if (role === "tool" && typeof tool_call_id === "string") {
+      baseMessage.tool_call_id = tool_call_id;
+    }
+
+    // Add tool_calls for assistant messages
+    if (role === "assistant" && Array.isArray(tool_calls)) {
+      baseMessage.tool_calls = tool_calls;
+    }
+
+    return baseMessage;
   });
 }
 
@@ -182,7 +201,7 @@ router.get("/text/providers", (_req: Request, res: Response) => {
 
 router.post("/text/generate", async (req: Request, res: Response) => {
   try {
-    const { provider, model, messages, maxTokens, temperature, topP } =
+    const { provider, model, messages, maxTokens, temperature, topP, tools } =
       req.body as Partial<TextGenerationRequest> & { messages: unknown };
 
     if (!isProviderId(provider)) {
@@ -209,6 +228,9 @@ router.post("/text/generate", async (req: Request, res: Response) => {
     }
     if (typeof topP === "number") {
       requestPayload.topP = topP;
+    }
+    if (Array.isArray(tools) && tools.length > 0) {
+      requestPayload.tools = tools;
     }
 
     const result = await generateText(requestPayload);

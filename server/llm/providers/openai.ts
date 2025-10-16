@@ -90,6 +90,8 @@ export async function generateWithOpenAI(
         parameters: tool.parameters,
       },
     }));
+    // Enable parallel tool calling
+    requestBody.parallel_tool_calls = true;
   }
 
   const response = await fetch(OPENAI_CHAT_COMPLETIONS_URL, {
