@@ -121,6 +121,9 @@ function normalizeModelId(model: string): string {
 export async function generateWithGoogle(
   params: ProviderGenerateParams,
 ): Promise<TextGenerationResult> {
+  console.log("[Google Provider] generateWithGoogle called");
+  console.log("[Google Provider] tools:", JSON.stringify(params.tools, null, 2));
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new TextGenerationError(
@@ -154,13 +157,16 @@ export async function generateWithGoogle(
     requestBody.systemInstruction = params.systemPrompt;
   }
 
+  // Build config object for generation settings, tools, and toolConfig
+  const config: Record<string, unknown> = {};
+
   if (generationConfigEntries.length > 0) {
-    requestBody.generationConfig = Object.fromEntries(generationConfigEntries);
+    config.generationConfig = Object.fromEntries(generationConfigEntries);
   }
 
-  // Add tools if provided
+  // Add tools if provided - tools and toolConfig go inside config object
   if (params.tools !== undefined && params.tools.length > 0) {
-    requestBody.tools = [
+    config.tools = [
       {
         functionDeclarations: params.tools.map((tool) => ({
           name: tool.name,
@@ -169,6 +175,26 @@ export async function generateWithGoogle(
         })),
       },
     ];
+
+    // Configure tool calling mode
+    const allowedFunctionNames = params.tools.map((tool) => tool.name);
+    config.toolConfig = {
+      functionCallingConfig: {
+        mode: "ANY", // AUTO, ANY, or NONE
+        allowedFunctionNames, // Explicitly list which functions can be called
+      },
+    };
+
+    // Debug logging for tool configuration
+    console.log("[Google Provider] Tool configuration:", JSON.stringify({
+      tools: config.tools,
+      toolConfig: config.toolConfig,
+    }, null, 2));
+  }
+
+  // Add config to request body if it has any settings
+  if (Object.keys(config).length > 0) {
+    requestBody.config = config;
   }
 
   const response = await ai.models.generateContent(requestBody as any);
@@ -176,7 +202,7 @@ export async function generateWithGoogle(
   const text = extractTextFromCandidates(response.candidates) ?? "";
   const toolCalls = extractToolCallsFromCandidates(response.candidates);
 
-  const usageMetadata = (response.response ?? response)?.usageMetadata;
+  const usageMetadata = response.usageMetadata;
   const usage = usageMetadata
     ? {
         inputTokens: usageMetadata.promptTokenCount ?? 0,
