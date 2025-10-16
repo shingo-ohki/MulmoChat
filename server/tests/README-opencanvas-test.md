@@ -1,10 +1,10 @@
-# OpenCanvas Tool Call Test
+# OpenCanvas Tool Call Tests
 
 ## Overview
 
-This test program verifies that when a user sends the message "open canvas", the LLM correctly interprets the intent and generates a tool call to the `openCanvas` function.
+These test programs verify that when a user sends the message "open canvas", different LLM providers correctly interpret the intent and generate a tool call to the `openCanvas` function.
 
-The test **does not execute** the actual `openCanvas` API - it only verifies that the LLM generates the appropriate tool call structure.
+The tests **do not execute** the actual `openCanvas` API - they only verify that the LLM generates the appropriate tool call structure.
 
 ## What It Tests
 
@@ -12,48 +12,93 @@ The test **does not execute** the actual `openCanvas` API - it only verifies tha
 2. **Tool Definition**: Provides the `openCanvas` tool definition to the LLM
 3. **Verification**: Checks that the LLM response includes a tool call to `openCanvas`
 
+## Available Test Files
+
+- `test-opencanvas.ts` - OpenAI (gpt-4o-mini, gpt-4o, etc.)
+- `test-opencanvas-anthropic.ts` - Anthropic Claude (claude-3-5-sonnet, etc.)
+- `test-opencanvas-google.ts` - Google Gemini (gemini-2.5-flash, etc.)
+- `test-opencanvas-ollama.ts` - Ollama (llama3.1, qwen2.5, etc.)
+
 ## Prerequisites
 
 - Node.js installed
-- OpenAI API key set in environment variables
+- API key(s) for the provider(s) you want to test
 - Server running on `http://localhost:3001` (or set `TEST_SERVER_URL`)
 
 ## Setup
 
-1. Create a `.env` file in the project root with your OpenAI API key:
+### OpenAI
+
+1. Create a `.env` file in the project root:
 
 ```bash
 OPENAI_API_KEY=sk-...
+OPENAI_TEST_MODEL=gpt-4o-mini  # optional
 ```
 
-2. (Optional) Override the default model:
+### Anthropic Claude
 
 ```bash
-OPENAI_TEST_MODEL=gpt-4o-mini
+ANTHROPIC_API_KEY=sk-ant-...
+ANTHROPIC_TEST_MODEL=claude-3-5-sonnet-latest  # optional
 ```
 
-3. (Optional) Override the test server URL:
+### Google Gemini
 
 ```bash
-TEST_SERVER_URL=http://localhost:3001
+GEMINI_API_KEY=...
+GEMINI_TEST_MODEL=gemini-2.5-flash  # optional
 ```
 
-## Running the Test
+### Ollama
 
-### Option 1: Direct execution with tsx
+No API key needed (local). Make sure Ollama is running:
 
 ```bash
+ollama serve  # Start Ollama server
+ollama pull llama3.1  # Pull a model with function calling support
+```
+
+```bash
+OLLAMA_TEST_MODEL=llama3.1  # optional
+OLLAMA_BASE_URL=http://127.0.0.1:11434  # optional
+```
+
+### Common Settings
+
+```bash
+TEST_SERVER_URL=http://localhost:3001  # optional
+```
+
+## Running the Tests
+
+### Direct execution with tsx
+
+```bash
+# OpenAI
 npx tsx server/tests/test-opencanvas.ts
+
+# Anthropic
+npx tsx server/tests/test-opencanvas-anthropic.ts
+
+# Google Gemini
+npx tsx server/tests/test-opencanvas-google.ts
+
+# Ollama
+npx tsx server/tests/test-opencanvas-ollama.ts
 ```
 
-### Option 2: Add to package.json scripts
+### Add to package.json scripts
 
 Add to your `package.json`:
 
 ```json
 {
   "scripts": {
-    "test:opencanvas": "tsx server/tests/test-opencanvas.ts"
+    "test:opencanvas": "tsx server/tests/test-opencanvas.ts",
+    "test:opencanvas:anthropic": "tsx server/tests/test-opencanvas-anthropic.ts",
+    "test:opencanvas:google": "tsx server/tests/test-opencanvas-google.ts",
+    "test:opencanvas:ollama": "tsx server/tests/test-opencanvas-ollama.ts"
   }
 }
 ```
@@ -62,11 +107,14 @@ Then run:
 
 ```bash
 npm run test:opencanvas
+npm run test:opencanvas:anthropic
+npm run test:opencanvas:google
+npm run test:opencanvas:ollama
 ```
 
 ## Expected Output
 
-On success:
+### Success (OpenAI example)
 
 ```
 === OpenCanvas Tool Call Test ===
@@ -81,17 +129,27 @@ Model response text: ""
 
 ✓ Verified: LLM called openCanvas tool
   Tool Call ID: call_abc123
-  Arguments: (no arguments)
+  Arguments: {}
 
-Token usage: { prompt_tokens: 45, completion_tokens: 12, total_tokens: 57 }
+Token usage: { promptTokens: 49, completionTokens: 10, totalTokens: 59 }
 
 ✅ TEST PASSED: LLM correctly generated openCanvas tool call!
 ```
 
-On failure (if LLM doesn't call the tool):
+### Failure (if LLM doesn't call the tool)
 
 ```
 ❌ TEST FAILED: Expected openCanvas tool call but got none!
+```
+
+### Warning (Ollama - model doesn't support function calling)
+
+```
+⚠️  WARNING: Expected openCanvas tool call but got none!
+This model may not support function calling, or it chose to respond directly.
+
+⚠ Test completed, but function calling was not demonstrated.
+Try a different model that supports function calling (e.g., llama3.1, qwen2.5).
 ```
 
 ## How It Works
@@ -123,6 +181,29 @@ On failure (if LLM doesn't call the tool):
 - It uses the same API endpoint (`/api/text/generate`) that the text-rest transport uses
 - The `openCanvas` tool requires no parameters, so the test expects empty or no arguments
 
+## Provider-Specific Notes
+
+### OpenAI
+- ✅ Excellent function calling support
+- All modern models (gpt-4o, gpt-4o-mini, gpt-4-turbo) work well
+- Typically returns empty text with only tool calls
+
+### Anthropic Claude
+- ✅ Excellent function calling support
+- Claude 3.5 Sonnet and newer models work well
+- May include brief text along with tool calls
+
+### Google Gemini
+- ✅ Good function calling support
+- Gemini 2.5 Flash and Pro models work well
+- May sometimes choose to answer directly instead of calling tools
+
+### Ollama
+- ⚠️ Function calling support varies by model
+- Works well: llama3.1, qwen2.5, mistral-nemo
+- May not work: older models, smaller models
+- No API key needed (runs locally)
+
 ## Troubleshooting
 
 ### Server not running
@@ -131,22 +212,49 @@ Request failed: ECONNREFUSED
 ```
 **Solution**: Start the development server with `npm run dev:server`
 
-### Missing API key
+### Missing API key (OpenAI)
 ```
 OPENAI_API_KEY is required to run this test.
 ```
-**Solution**: Add `OPENAI_API_KEY=sk-...` to your `.env` file
+**Solution**: Add the appropriate API key to your `.env` file
+
+### Missing API key (Anthropic)
+```
+ANTHROPIC_API_KEY is required to run this test.
+```
+**Solution**: Add `ANTHROPIC_API_KEY=sk-ant-...` to your `.env` file
+
+### Missing API key (Google)
+```
+GEMINI_API_KEY is required to run this test.
+```
+**Solution**: Add `GEMINI_API_KEY=...` to your `.env` file
+
+### Ollama not running
+```
+Request failed: ECONNREFUSED
+```
+**Solution**: Start Ollama with `ollama serve`
 
 ### LLM doesn't call the tool
 
-If the LLM returns text instead of a tool call, it might be:
-- Model version doesn't support function calling well
-- Try a different model: `OPENAI_TEST_MODEL=gpt-4o`
-- The user message might be too ambiguous (though "open canvas" should work)
+If the LLM returns text instead of a tool call:
+- **Model doesn't support function calling**: Try a newer/larger model
+- **OpenAI**: Use gpt-4o or gpt-4o-mini
+- **Anthropic**: Use claude-3-5-sonnet-latest
+- **Google**: Use gemini-2.5-flash or gemini-2.5-pro
+- **Ollama**: Use llama3.1, qwen2.5, or other function-calling capable models
 
 ## Related Files
 
-- **Test Implementation**: `server/tests/test-opencanvas.ts`
-- **Canvas Tool Definition**: `src/tools/models/canvas.ts`
-- **Tool System**: `src/tools/index.ts`
-- **Text Session Transport**: `src/composables/useTextSession.ts`
+### Test Files
+- `server/tests/test-opencanvas.ts` - OpenAI test
+- `server/tests/test-opencanvas-anthropic.ts` - Anthropic test
+- `server/tests/test-opencanvas-google.ts` - Google test
+- `server/tests/test-opencanvas-ollama.ts` - Ollama test
+
+### Source Files
+- `src/tools/models/canvas.ts` - Canvas tool definition
+- `src/tools/index.ts` - Tool system and plugin registry
+- `src/composables/useTextSession.ts` - Text session transport implementation
+- `server/llm/textService.ts` - Text generation service backend
