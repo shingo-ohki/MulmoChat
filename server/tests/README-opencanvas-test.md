@@ -194,9 +194,11 @@ Try a different model that supports function calling (e.g., llama3.1, qwen2.5).
 - May include brief text along with tool calls
 
 ### Google Gemini
-- ✅ Good function calling support
-- Gemini 2.5 Flash and Pro models work well
-- May sometimes choose to answer directly instead of calling tools
+- ⚠️ Function calling support with extended thinking
+- Gemini 2.5 models have reasoning capabilities and may choose to answer directly
+- For "open canvas", may interpret as the desktop application "OpenCanvas"
+- In production, stronger system prompts guide tool usage more reliably
+- Test passes with soft warning (expected behavior)
 
 ### Ollama
 - ⚠️ Function calling support varies by model
