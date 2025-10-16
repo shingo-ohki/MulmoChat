@@ -133,13 +133,6 @@ export async function generateWithGoogle(
 
   const contents = toGeminiMessages(params.conversationMessages);
 
-  if (params.systemPrompt) {
-    contents.unshift({
-      role: "user",
-      parts: [{ text: params.systemPrompt }],
-    });
-  }
-
   const generationConfigEntries: Array<[string, number]> = [];
   if (params.maxTokens !== undefined) {
     generationConfigEntries.push(["maxOutputTokens", params.maxTokens]);
@@ -155,6 +148,11 @@ export async function generateWithGoogle(
     model: normalizeModelId(params.model),
     contents,
   };
+
+  // Use systemInstruction parameter for system prompts (Gemini-specific)
+  if (params.systemPrompt) {
+    requestBody.systemInstruction = params.systemPrompt;
+  }
 
   if (generationConfigEntries.length > 0) {
     requestBody.generationConfig = Object.fromEntries(generationConfigEntries);
