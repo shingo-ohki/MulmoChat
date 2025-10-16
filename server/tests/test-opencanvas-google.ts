@@ -65,9 +65,7 @@ async function main(): Promise<void> {
   });
 
   if (!response.ok) {
-    console.error(
-      `Request failed: ${response.status} ${response.statusText}`,
-    );
+    console.error(`Request failed: ${response.status} ${response.statusText}`);
     const text = await response.text();
     console.error(text);
     process.exit(1);
@@ -84,22 +82,18 @@ async function main(): Promise<void> {
 
   // Verify that the LLM called the openCanvas tool
   if (!data.result.toolCalls || data.result.toolCalls.length === 0) {
-    console.warn("\n⚠️  Gemini chose to respond directly without calling the tool");
-    console.log(`Response: "${data.result.text.substring(0, 150)}..."`);
-    console.log(
-      "\nNote: Gemini 2.5 models have extended thinking and may choose to answer directly",
+    console.error(
+      "\n❌ TEST FAILED: Expected openCanvas tool call but got none!",
     );
-    console.log('rather than use tools. The phrase "open canvas" may be ambiguous.');
-    console.log("\n✓ Test completed - Gemini's behavior is within expected parameters.");
-    console.log("In production, the app's system prompt guides tool usage more strongly.");
-    process.exit(0); // Not a failure - expected behavior for this model
+    console.log("Full response:", JSON.stringify(data, null, 2));
+    process.exit(1);
   }
 
   console.log(`\n✓ Tool calls received: ${data.result.toolCalls.length}`);
 
   // Check if openCanvas was called
   const openCanvasCall = data.result.toolCalls.find(
-    (call) => call.name === "openCanvas"
+    (call) => call.name === "openCanvas",
   );
 
   if (!openCanvasCall) {
@@ -121,7 +115,9 @@ async function main(): Promise<void> {
     console.log("\nToken usage:", data.result.usage);
   }
 
-  console.log("\n✅ TEST PASSED: Google Gemini correctly generated openCanvas tool call!");
+  console.log(
+    "\n✅ TEST PASSED: Google Gemini correctly generated openCanvas tool call!",
+  );
 }
 
 main().catch((error) => {

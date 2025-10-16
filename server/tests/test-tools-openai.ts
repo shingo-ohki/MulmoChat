@@ -153,7 +153,10 @@ async function main(): Promise<void> {
 
   console.log(`Text response: "${initialData.result.text}"`);
 
-  if (!initialData.result.toolCalls || initialData.result.toolCalls.length === 0) {
+  if (
+    !initialData.result.toolCalls ||
+    initialData.result.toolCalls.length === 0
+  ) {
     console.error("ERROR: Expected tool calls but got none!");
     console.log("Full response:", JSON.stringify(initialData, null, 2));
     process.exit(1);

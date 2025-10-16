@@ -65,9 +65,7 @@ async function main(): Promise<void> {
   });
 
   if (!response.ok) {
-    console.error(
-      `Request failed: ${response.status} ${response.statusText}`,
-    );
+    console.error(`Request failed: ${response.status} ${response.statusText}`);
     const text = await response.text();
     console.error(text);
     process.exit(1);
@@ -84,12 +82,16 @@ async function main(): Promise<void> {
 
   // Verify that the LLM called the openCanvas tool
   if (!data.result.toolCalls || data.result.toolCalls.length === 0) {
-    console.warn("\n⚠️  Gemini chose to respond directly without calling the tool");
+    console.warn(
+      "\n⚠️  Gemini chose to respond directly without calling the tool",
+    );
     console.log("Full response:", JSON.stringify(data, null, 2));
     console.log(
       "\nNote: Gemini 2.5 models have extended thinking and may choose to answer directly",
     );
-    console.log("rather than use tools. This is expected behavior for this model.");
+    console.log(
+      "rather than use tools. This is expected behavior for this model.",
+    );
     process.exit(0);
   }
 
@@ -97,7 +99,7 @@ async function main(): Promise<void> {
 
   // Check if openCanvas was called
   const openCanvasCall = data.result.toolCalls.find(
-    (call) => call.name === "openCanvas"
+    (call) => call.name === "openCanvas",
   );
 
   if (!openCanvasCall) {
@@ -119,7 +121,9 @@ async function main(): Promise<void> {
     console.log("\nToken usage:", data.result.usage);
   }
 
-  console.log("\n✅ TEST PASSED: Google Gemini correctly generated openCanvas tool call!");
+  console.log(
+    "\n✅ TEST PASSED: Google Gemini correctly generated openCanvas tool call!",
+  );
 }
 
 main().catch((error) => {

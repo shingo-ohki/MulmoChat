@@ -166,7 +166,9 @@ async function main(): Promise<void> {
     console.log(
       "Gemini 2.5 models have extended thinking and may choose to answer directly",
     );
-    console.log("rather than use tools for questions they can answer internally.");
+    console.log(
+      "rather than use tools for questions they can answer internally.",
+    );
     console.log("Full response:", JSON.stringify(initialData, null, 2));
     console.log(
       "\n⚠ Test completed, but function calling was not demonstrated.",

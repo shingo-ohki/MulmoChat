@@ -41,9 +41,7 @@ async function main(): Promise<void> {
     `Base URL: ${process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434"}\n`,
   );
 
-  console.log(
-    "NOTE: Function calling support varies by Ollama model.",
-  );
+  console.log("NOTE: Function calling support varies by Ollama model.");
   console.log(
     "      Newer models like llama3.1+ or qwen2.5+ typically support it.\n",
   );
@@ -70,9 +68,7 @@ async function main(): Promise<void> {
   });
 
   if (!response.ok) {
-    console.error(
-      `Request failed: ${response.status} ${response.statusText}`,
-    );
+    console.error(`Request failed: ${response.status} ${response.statusText}`);
     const text = await response.text();
     console.error(text);
     console.log(
@@ -110,7 +106,7 @@ async function main(): Promise<void> {
 
   // Check if openCanvas was called
   const openCanvasCall = data.result.toolCalls.find(
-    (call) => call.name === "openCanvas"
+    (call) => call.name === "openCanvas",
   );
 
   if (!openCanvasCall) {
@@ -132,7 +128,9 @@ async function main(): Promise<void> {
     console.log("\nToken usage:", data.result.usage);
   }
 
-  console.log("\n✅ TEST PASSED: Ollama correctly generated openCanvas tool call!");
+  console.log(
+    "\n✅ TEST PASSED: Ollama correctly generated openCanvas tool call!",
+  );
 }
 
 main().catch((error) => {

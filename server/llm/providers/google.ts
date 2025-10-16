@@ -121,9 +121,6 @@ function normalizeModelId(model: string): string {
 export async function generateWithGoogle(
   params: ProviderGenerateParams,
 ): Promise<TextGenerationResult> {
-  console.log("[Google Provider] generateWithGoogle called");
-  console.log("[Google Provider] tools:", JSON.stringify(params.tools, null, 2));
-
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new TextGenerationError(
@@ -184,12 +181,6 @@ export async function generateWithGoogle(
         allowedFunctionNames, // Explicitly list which functions can be called
       },
     };
-
-    // Debug logging for tool configuration
-    console.log("[Google Provider] Tool configuration:", JSON.stringify({
-      tools: config.tools,
-      toolConfig: config.toolConfig,
-    }, null, 2));
   }
 
   // Add config to request body if it has any settings

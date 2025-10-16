@@ -111,9 +111,7 @@ async function main(): Promise<void> {
     `Base URL: ${process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434"}\n`,
   );
 
-  console.log(
-    "NOTE: Function calling support varies by Ollama model.",
-  );
+  console.log("NOTE: Function calling support varies by Ollama model.");
   console.log(
     "      Newer models like llama3.1+ or qwen2.5+ typically support it.\n",
   );

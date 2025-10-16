@@ -69,9 +69,7 @@ async function main(): Promise<void> {
   });
 
   if (!response.ok) {
-    console.error(
-      `Request failed: ${response.status} ${response.statusText}`,
-    );
+    console.error(`Request failed: ${response.status} ${response.statusText}`);
     const text = await response.text();
     console.error(text);
     process.exit(1);

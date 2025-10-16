@@ -103,8 +103,7 @@ function executeCalculator(args: {
 }
 
 async function main(): Promise<void> {
-  const model =
-    process.env.ANTHROPIC_TEST_MODEL ?? "claude-3-5-sonnet-latest";
+  const model = process.env.ANTHROPIC_TEST_MODEL ?? "claude-3-5-sonnet-latest";
 
   if (!process.env.ANTHROPIC_API_KEY) {
     console.error("ANTHROPIC_API_KEY is required to run this test.");

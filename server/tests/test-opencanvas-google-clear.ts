@@ -65,9 +65,7 @@ async function main(): Promise<void> {
   });
 
   if (!response.ok) {
-    console.error(
-      `Request failed: ${response.status} ${response.statusText}`,
-    );
+    console.error(`Request failed: ${response.status} ${response.statusText}`);
     const text = await response.text();
     console.error(text);
     process.exit(1);
@@ -83,7 +81,9 @@ async function main(): Promise<void> {
   console.log(`\nModel response text: "${data.result.text}"`);
 
   if (!data.result.toolCalls || data.result.toolCalls.length === 0) {
-    console.error("\n❌ TEST FAILED: Expected openCanvas tool call but got none!");
+    console.error(
+      "\n❌ TEST FAILED: Expected openCanvas tool call but got none!",
+    );
     console.log("Full response:", JSON.stringify(data, null, 2));
     process.exit(1);
   }
@@ -91,7 +91,7 @@ async function main(): Promise<void> {
   console.log(`\n✓ Tool calls received: ${data.result.toolCalls.length}`);
 
   const openCanvasCall = data.result.toolCalls.find(
-    (call) => call.name === "openCanvas"
+    (call) => call.name === "openCanvas",
   );
 
   if (!openCanvasCall) {
@@ -112,7 +112,9 @@ async function main(): Promise<void> {
     console.log("\nToken usage:", data.result.usage);
   }
 
-  console.log("\n✅ TEST PASSED: Google Gemini correctly generated openCanvas tool call!");
+  console.log(
+    "\n✅ TEST PASSED: Google Gemini correctly generated openCanvas tool call!",
+  );
 }
 
 main().catch((error) => {

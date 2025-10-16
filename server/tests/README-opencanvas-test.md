@@ -181,6 +181,24 @@ Try a different model that supports function calling (e.g., llama3.1, qwen2.5).
 - It uses the same API endpoint (`/api/text/generate`) that the text-rest transport uses
 - The `openCanvas` tool requires no parameters, so the test expects empty or no arguments
 
+## Important Fix Applied
+
+**Google Gemini API Structure**: The Google provider previously had tools/toolConfig at the wrong level. They must be inside a `config` object:
+
+```typescript
+// Correct structure for Google GenAI SDK
+{
+  model: "gemini-2.5-flash",
+  contents: [...],
+  config: {           // Tools go inside config
+    tools: [...],
+    toolConfig: {...}
+  }
+}
+```
+
+This fix resolved issues where Gemini was not calling tools even with `mode: "ANY"` configured.
+
 ## Provider-Specific Notes
 
 ### OpenAI
@@ -194,11 +212,10 @@ Try a different model that supports function calling (e.g., llama3.1, qwen2.5).
 - May include brief text along with tool calls
 
 ### Google Gemini
-- ⚠️ Function calling support with extended thinking
-- Gemini 2.5 models have reasoning capabilities and may choose to answer directly
-- For "open canvas", may interpret as the desktop application "OpenCanvas"
-- In production, stronger system prompts guide tool usage more reliably
-- Test passes with soft warning (expected behavior)
+- ✅ Excellent function calling support
+- Gemini 2.5 Flash and Pro models work well
+- Requires proper API request structure (tools/toolConfig in `config` object)
+- With correct configuration, reliably calls tools
 
 ### Ollama
 - ⚠️ Function calling support varies by model
