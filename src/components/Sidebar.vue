@@ -289,28 +289,6 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Image Generation Backend
-            </label>
-            <select
-              :value="imageGenerationBackend"
-              @change="
-                $emit(
-                  'update:imageGenerationBackend',
-                  ($event.target as HTMLSelectElement).value,
-                )
-              "
-              class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="gemini">Google Gemini</option>
-              <option value="comfyui">ComfyUI (Local)</option>
-            </select>
-            <p class="text-xs text-gray-500 mt-1">
-              Choose between cloud-based Gemini or local ComfyUI for image generation.
-            </p>
-          </div>
-
-          <div>
             <label class="flex items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
