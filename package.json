@@ -24,7 +24,8 @@
     "test:tools:openai": "tsx server/tests/test-tools-openai.ts",
     "test:tools:anthropic": "tsx server/tests/test-tools-anthropic.ts",
     "test:tools:google": "tsx server/tests/test-tools-google.ts",
-    "test:tools:ollama": "tsx server/tests/test-tools-ollama.ts"
+    "test:tools:ollama": "tsx server/tests/test-tools-ollama.ts",
+    "test:image:comfy": "tsx server/tests/test-comfyui.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.65.0",

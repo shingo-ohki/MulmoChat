@@ -81,25 +81,25 @@ const buildSDXLTurboWorkflow = ({
       },
     },
     "2": {
+      class_type: "EmptyLatentImage",
+      inputs: {
+        width,
+        height,
+        batch_size: 1,
+      },
+    },
+    "3": {
       class_type: "CLIPTextEncode",
       inputs: {
         text: prompt,
         clip: ["1", 1],
       },
     },
-    "3": {
+    "4": {
       class_type: "CLIPTextEncode",
       inputs: {
         text: negativePrompt,
         clip: ["1", 1],
-      },
-    },
-    "4": {
-      class_type: "EmptyLatentImage",
-      inputs: {
-        width,
-        height,
-        batch_size: 1,
       },
     },
     "5": {
@@ -112,9 +112,9 @@ const buildSDXLTurboWorkflow = ({
         scheduler,
         denoise,
         model: ["1", 0],
-        positive: ["2", 0],
-        negative: ["3", 0],
-        latent_image: ["4", 0],
+        positive: ["3", 0],
+        negative: ["4", 0],
+        latent_image: ["2", 0],
       },
     },
     "6": {
@@ -190,9 +190,9 @@ router.post(
 
     const negativePrompt =
       typeof body.negativePrompt === "string" ? body.negativePrompt : "";
-    const widthValue = toNumber(body.width, 1024);
-    const heightValue = toNumber(body.height, 1024);
-    const stepsValue = toNumber(body.steps, 6);
+    const widthValue = toNumber(body.width, 512);
+    const heightValue = toNumber(body.height, 512);
+    const stepsValue = toNumber(body.steps, 3);
     const cfgScaleValue = toNumber(body.cfgScale, 1.5);
     const defaultSeed = Math.floor(Math.random() * 2 ** 32);
     const seedValue = toNumber(body.seed, defaultSeed);
@@ -205,10 +205,19 @@ router.post(
         ? body.scheduler
         : "karras";
     const denoiseValue = toNumber(body.denoise, 1);
-    const modelValue =
+    let modelValue =
       typeof body.model === "string" && body.model.trim().length > 0
         ? body.model
         : DEFAULT_COMFY_MODEL;
+    if (!modelValue || modelValue.trim().length === 0) {
+      res.status(400).json({
+        error: "Model is required",
+        details:
+          "Set COMFYUI_DEFAULT_MODEL or pass model in the request body.",
+      });
+      return;
+    }
+    modelValue = modelValue.trim();
     const filenamePrefix =
       typeof body.filenamePrefix === "string" &&
       body.filenamePrefix.trim().length > 0
@@ -247,8 +256,9 @@ router.post(
       });
 
       if (!queueResponse.ok) {
+        const errorText = await queueResponse.text();
         throw new Error(
-          `ComfyUI prompt submission failed: ${queueResponse.status} ${queueResponse.statusText}`,
+          `ComfyUI prompt submission failed: ${queueResponse.status} ${queueResponse.statusText} - ${errorText}`,
         );
       }
 
