@@ -4,6 +4,7 @@ import type { UserPreferencesState } from "../composables/useUserPreferences";
 export interface ToolContext {
   currentResult: ToolResult<any> | null;
   userPreferences?: UserPreferencesState;
+  getPluginConfig?: <T = any>(key: string) => T | undefined;
 }
 
 export interface ToolResult<T = Record<string, any>, J = any> {
@@ -29,6 +30,12 @@ export interface ToolResultComplete<T = Record<string, any>, J = any>
 export interface FileUploadConfig {
   acceptedTypes: string[]; // MIME types like "image/png", "application/pdf"
   handleUpload: (fileData: string, fileName: string) => ToolResult<any, any>;
+}
+
+export interface ToolPluginConfig {
+  key: string; // Storage key for this config (will be prefixed with "plugin_config_")
+  defaultValue: any; // Default value for this configuration
+  component: any; // Vue component for configuration UI (Props: { value: any }, Emits: { 'update:value': [newValue: any] })
 }
 
 export interface ToolPlugin<T = Record<string, any>, J = any> {
@@ -57,4 +64,5 @@ export interface ToolPlugin<T = Record<string, any>, J = any> {
   previewComponent?: any; // Vue component for sidebar preview
   fileUpload?: FileUploadConfig; // Optional file upload configuration
   systemPrompt?: string; // Optional tool-specific system prompt statement
+  config?: ToolPluginConfig; // Optional plugin-specific configuration
 }

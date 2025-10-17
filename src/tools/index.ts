@@ -133,3 +133,31 @@ export const getAcceptedFileTypes = () => {
   );
   return Array.from(new Set(allTypes));
 };
+
+export const getPluginsWithConfig = () => {
+  return pluginList.filter((plugin) => plugin.plugin.config);
+};
+
+export const hasAnyPluginConfig = () => {
+  return pluginList.some((plugin) => plugin.plugin.config);
+};
+
+export const getPluginConfigValue = (
+  configs: Record<string, any>,
+  toolName: string,
+  configKey: string,
+): any => {
+  const plugin = plugins[toolName];
+  if (!plugin?.config || plugin.config.key !== configKey) return undefined;
+  return configs[configKey] ?? plugin.config.defaultValue;
+};
+
+export const initializePluginConfigs = (): Record<string, any> => {
+  const configs: Record<string, any> = {};
+  pluginList.forEach((plugin) => {
+    if (plugin.plugin.config) {
+      configs[plugin.plugin.config.key] = plugin.plugin.config.defaultValue;
+    }
+  });
+  return configs;
+};

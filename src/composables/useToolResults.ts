@@ -13,6 +13,7 @@ interface UseToolResultsOptions {
   getToolPlugin: GetToolPluginFn;
   suppressInstructions: Ref<boolean>;
   userPreferences: Ref<UserPreferencesState>;
+  getPluginConfig: <T = any>(key: string) => T | undefined;
   sleep: (milliseconds: number) => Promise<void>;
   sendInstructions: (instructions: string) => boolean;
   sendFunctionCallOutput: (callId: string, output: string) => boolean;
@@ -125,6 +126,7 @@ export function useToolResults(
       const context: ToolContext = {
         currentResult: selectedResult.value ?? undefined,
         userPreferences: options.userPreferences.value,
+        getPluginConfig: options.getPluginConfig,
       };
 
       if (plugin?.waitingMessage) {

@@ -34,6 +34,7 @@
         :supports-audio-input="supportsAudioInput"
         :supports-audio-output="supportsAudioOutput"
         :image-generation-backend="userPreferences.imageGenerationBackend"
+        :plugin-configs="userPreferences.pluginConfigs"
         @start-chat="startChat"
         @stop-chat="stopChat"
         @set-mute="setMute"
@@ -55,6 +56,7 @@
         @update:image-generation-backend="
           userPreferences.imageGenerationBackend = $event
         "
+        @update:plugin-configs="userPreferences.pluginConfigs = $event"
         @upload-files="handleUploadFiles"
       />
 
@@ -246,6 +248,11 @@ onMounted(() => {
   void loadTextProviders();
 });
 
+// Helper function to get plugin config values
+const getPluginConfig = <T = any>(key: string): T | undefined => {
+  return userPreferences.pluginConfigs[key] as T | undefined;
+};
+
 const {
   toolResults,
   selectedResult,
@@ -260,6 +267,7 @@ const {
   getToolPlugin,
   suppressInstructions: computed(() => userPreferences.suppressInstructions),
   userPreferences: computed(() => userPreferences),
+  getPluginConfig,
   sleep,
   sendInstructions,
   sendFunctionCallOutput,

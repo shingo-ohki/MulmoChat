@@ -379,6 +379,29 @@
               </label>
             </div>
           </div>
+
+          <div v-if="hasAnyPluginConfig()">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Plugin Settings
+            </label>
+            <div class="space-y-4">
+              <component
+                v-for="pluginModule in getPluginsWithConfig()"
+                :key="pluginModule.plugin.config!.key"
+                :is="pluginModule.plugin.config!.component"
+                :value="
+                  pluginConfigs[pluginModule.plugin.config!.key] ??
+                  pluginModule.plugin.config!.defaultValue
+                "
+                @update:value="
+                  handlePluginConfigUpdate(
+                    pluginModule.plugin.config!.key,
+                    $event,
+                  )
+                "
+              />
+            </div>
+          </div>
         </div>
 
         <div class="flex justify-end mt-4 pt-4 border-t flex-shrink-0">
@@ -402,6 +425,8 @@ import {
   getAcceptedFileTypes,
   getFileUploadPlugins,
   getPluginList,
+  getPluginsWithConfig,
+  hasAnyPluginConfig,
 } from "../tools";
 import { LANGUAGES } from "../config/languages";
 import { SYSTEM_PROMPTS } from "../config/systemPrompts";
@@ -435,6 +460,7 @@ const props = defineProps<{
   supportsAudioInput: boolean;
   supportsAudioOutput: boolean;
   imageGenerationBackend: "gemini" | "comfyui";
+  pluginConfigs: Record<string, any>;
 }>();
 
 const emit = defineEmits<{
@@ -453,6 +479,7 @@ const emit = defineEmits<{
   "update:modelKind": [value: "voice-realtime" | "text-rest"];
   "update:textModelId": [value: string];
   "update:imageGenerationBackend": [value: "gemini" | "comfyui"];
+  "update:pluginConfigs": [value: Record<string, any>];
   uploadFiles: [results: ToolResult[]];
 }>();
 
@@ -522,6 +549,11 @@ function handleFileUpload(event: Event): void {
 function handlePluginToggle(pluginName: string, enabled: boolean): void {
   const updated = { ...props.enabledPlugins, [pluginName]: enabled };
   emit("update:enabledPlugins", updated);
+}
+
+function handlePluginConfigUpdate(key: string, value: any): void {
+  const updated = { ...props.pluginConfigs, [key]: value };
+  emit("update:pluginConfigs", updated);
 }
 
 function getModeIcon(): string {

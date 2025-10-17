@@ -1,6 +1,7 @@
 import { ToolPlugin, ToolContext, ToolResult } from "../types";
 import ImageView from "../views/image.vue";
 import ImagePreview from "../previews/image.vue";
+import ImageGenerationConfig from "../configs/ImageGenerationConfig.vue";
 
 const toolName = "generateImage";
 
@@ -31,8 +32,12 @@ export async function generateImageCommon(
   editImage: boolean,
 ): Promise<ToolResult<ImageToolData>> {
   try {
-    // Determine which backend to use
-    const backend = context.userPreferences?.imageGenerationBackend || "gemini";
+    // Determine which backend to use (new config system takes precedence)
+    const backend =
+      context.getPluginConfig?.("imageGenerationBackend") ||
+      context.userPreferences?.pluginConfigs?.["imageGenerationBackend"] ||
+      context.userPreferences?.imageGenerationBackend ||
+      "gemini";
     const endpoint = backend === "comfyui" ? "/api/generate-image/comfy" : "/api/generate-image";
 
     const response = await fetch(endpoint, {
@@ -133,4 +138,9 @@ export const plugin: ToolPlugin<ImageToolData> = {
   },
   systemPrompt:
     "When you are talking about places, objects, people, movies, books and other things, you MUST use the generateImage API to draw pictures to make the conversation more engaging.",
+  config: {
+    key: "imageGenerationBackend",
+    defaultValue: "gemini",
+    component: ImageGenerationConfig,
+  },
 };

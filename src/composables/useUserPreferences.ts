@@ -20,6 +20,7 @@ const MODEL_ID_KEY = "model_id_v1";
 const MODEL_KIND_KEY = "model_kind_v2";
 const TEXT_MODEL_ID_KEY = "text_model_id_v1";
 const IMAGE_GENERATION_BACKEND_KEY = "image_generation_backend_v1";
+const PLUGIN_CONFIGS_KEY = "plugin_configs_v1";
 
 interface StorageLike {
   getItem(key: string): string | null;
@@ -56,6 +57,7 @@ export interface UserPreferencesState {
   modelKind: "voice-realtime" | "text-rest";
   textModelId: string;
   imageGenerationBackend: "gemini" | "comfyui";
+  pluginConfigs: Record<string, any>;
 }
 
 export interface UseUserPreferencesReturn {
@@ -74,11 +76,41 @@ const initEnabledPlugins = (): Record<string, boolean> => {
   }
 };
 
+const initPluginConfigs = (): Record<string, any> => {
+  const stored = getStoredValue(PLUGIN_CONFIGS_KEY);
+  if (!stored) return {};
+  try {
+    return JSON.parse(stored);
+  } catch {
+    return {};
+  }
+};
+
 const resolveStoredModelKind = (
   stored: string | null,
 ): UserPreferencesState["modelKind"] => {
   if (stored === "text-rest") return "text-rest";
   return "voice-realtime";
+};
+
+// Migrate old imageGenerationBackend to new pluginConfigs
+const migrateOldConfigs = (): Record<string, any> => {
+  const configs = initPluginConfigs();
+
+  // If we already have the new config, no migration needed
+  if (configs.imageGenerationBackend) {
+    return configs;
+  }
+
+  // Check for old imageGenerationBackend setting
+  const oldBackend = getStoredValue(IMAGE_GENERATION_BACKEND_KEY);
+  if (oldBackend) {
+    configs.imageGenerationBackend = oldBackend;
+    // Save the migrated config
+    setStoredObject(PLUGIN_CONFIGS_KEY, configs);
+  }
+
+  return configs;
 };
 
 export function useUserPreferences(): UseUserPreferencesReturn {
@@ -96,6 +128,7 @@ export function useUserPreferences(): UseUserPreferencesReturn {
     modelKind: storedModelKind,
     textModelId: getStoredValue(TEXT_MODEL_ID_KEY) || DEFAULT_TEXT_MODEL.rawId,
     imageGenerationBackend: (getStoredValue(IMAGE_GENERATION_BACKEND_KEY) as "gemini" | "comfyui") || "gemini",
+    pluginConfigs: migrateOldConfigs(),
   });
 
   watch(
@@ -158,6 +191,14 @@ export function useUserPreferences(): UseUserPreferencesReturn {
     () => state.enabledPlugins,
     (val) => {
       setStoredObject(ENABLED_PLUGINS_KEY, val);
+    },
+    { deep: true },
+  );
+
+  watch(
+    () => state.pluginConfigs,
+    (val) => {
+      setStoredObject(PLUGIN_CONFIGS_KEY, val);
     },
     { deep: true },
   );
