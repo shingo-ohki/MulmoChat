@@ -192,7 +192,7 @@ router.post(
       typeof body.negativePrompt === "string" ? body.negativePrompt : "";
     const widthValue = toNumber(body.width, 512);
     const heightValue = toNumber(body.height, 512);
-    const stepsValue = toNumber(body.steps, 3);
+    const stepsValue = toNumber(body.steps, 20);
     const cfgScaleValue = toNumber(body.cfgScale, 1.5);
     const defaultSeed = Math.floor(Math.random() * 2 ** 32);
     const seedValue = toNumber(body.seed, defaultSeed);
