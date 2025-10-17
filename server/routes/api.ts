@@ -8,6 +8,7 @@ import movieRouter from "./movie";
 import pdfRouter from "./pdf";
 import htmlRouter from "./html";
 import textRouter from "./textLLM";
+import comfyRouter from "./comfyui";
 dotenv.config();
 
 const router: Router = express.Router();
@@ -23,6 +24,9 @@ router.use(htmlRouter);
 
 // Mount text LLM routes
 router.use(textRouter);
+
+// Mount ComfyUI routes
+router.use(comfyRouter);
 
 // Session start endpoint
 router.get("/start", async (req: Request, res: Response): Promise<void> => {
