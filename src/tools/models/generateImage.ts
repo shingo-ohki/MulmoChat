@@ -31,7 +31,11 @@ export async function generateImageCommon(
   editImage: boolean,
 ): Promise<ToolResult<ImageToolData>> {
   try {
-    const response = await fetch("/api/generate-image", {
+    // Determine which backend to use
+    const backend = context.userPreferences?.imageGenerationBackend || "gemini";
+    const endpoint = backend === "comfyui" ? "/api/generate-image/comfy" : "/api/generate-image";
+
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -56,7 +60,20 @@ export async function generateImageCommon(
 
     const data = await response.json();
 
-    if (data.success && data.imageData) {
+    // Handle ComfyUI response (array of images)
+    if (backend === "comfyui" && data.success && data.images && data.images.length > 0) {
+      return {
+        data: {
+          imageData: `data:image/png;base64,${data.images[0]}`,
+          prompt,
+        },
+        message: "image generation succeeded",
+        instructions:
+          "Acknowledge that the image was generated and has been already presented to the user.",
+      };
+    }
+    // Handle Gemini response (single image)
+    else if (data.success && data.imageData) {
       return {
         data: {
           imageData: `data:image/png;base64,${data.imageData}`,

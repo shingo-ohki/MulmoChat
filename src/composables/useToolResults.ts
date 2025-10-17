@@ -2,6 +2,7 @@
 
 import { ref, type Ref } from "vue";
 import type { ToolContext, ToolResult } from "../tools";
+import type { UserPreferencesState } from "./useUserPreferences";
 import { SESSION_CONFIG } from "../config/session";
 
 type ToolExecuteFn = typeof import("../tools").toolExecute;
@@ -11,6 +12,7 @@ interface UseToolResultsOptions {
   toolExecute: ToolExecuteFn;
   getToolPlugin: GetToolPluginFn;
   suppressInstructions: Ref<boolean>;
+  userPreferences: Ref<UserPreferencesState>;
   sleep: (milliseconds: number) => Promise<void>;
   sendInstructions: (instructions: string) => boolean;
   sendFunctionCallOutput: (callId: string, output: string) => boolean;
@@ -122,6 +124,7 @@ export function useToolResults(
       const plugin = options.getToolPlugin(msg.name);
       const context: ToolContext = {
         currentResult: selectedResult.value ?? undefined,
+        userPreferences: options.userPreferences.value,
       };
 
       if (plugin?.waitingMessage) {

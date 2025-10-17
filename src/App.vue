@@ -33,6 +33,7 @@
         :text-model-options="textModelOptions"
         :supports-audio-input="supportsAudioInput"
         :supports-audio-output="supportsAudioOutput"
+        :image-generation-backend="userPreferences.imageGenerationBackend"
         @start-chat="startChat"
         @stop-chat="stopChat"
         @set-mute="setMute"
@@ -51,6 +52,9 @@
         @update:model-id="userPreferences.modelId = $event"
         @update:model-kind="userPreferences.modelKind = $event"
         @update:text-model-id="userPreferences.textModelId = $event"
+        @update:image-generation-backend="
+          userPreferences.imageGenerationBackend = $event
+        "
         @upload-files="handleUploadFiles"
       />
 
@@ -255,6 +259,7 @@ const {
   toolExecute,
   getToolPlugin,
   suppressInstructions: computed(() => userPreferences.suppressInstructions),
+  userPreferences: computed(() => userPreferences),
   sleep,
   sendInstructions,
   sendFunctionCallOutput,

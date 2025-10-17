@@ -19,6 +19,7 @@ const CUSTOM_INSTRUCTIONS_KEY = "custom_instructions_v1";
 const MODEL_ID_KEY = "model_id_v1";
 const MODEL_KIND_KEY = "model_kind_v2";
 const TEXT_MODEL_ID_KEY = "text_model_id_v1";
+const IMAGE_GENERATION_BACKEND_KEY = "image_generation_backend_v1";
 
 interface StorageLike {
   getItem(key: string): string | null;
@@ -54,6 +55,7 @@ export interface UserPreferencesState {
   modelId: string;
   modelKind: "voice-realtime" | "text-rest";
   textModelId: string;
+  imageGenerationBackend: "gemini" | "comfyui";
 }
 
 export interface UseUserPreferencesReturn {
@@ -93,6 +95,7 @@ export function useUserPreferences(): UseUserPreferencesReturn {
     modelId: getStoredValue(MODEL_ID_KEY) || DEFAULT_REALTIME_MODEL_ID,
     modelKind: storedModelKind,
     textModelId: getStoredValue(TEXT_MODEL_ID_KEY) || DEFAULT_TEXT_MODEL.rawId,
+    imageGenerationBackend: (getStoredValue(IMAGE_GENERATION_BACKEND_KEY) as "gemini" | "comfyui") || "gemini",
   });
 
   watch(
@@ -141,6 +144,13 @@ export function useUserPreferences(): UseUserPreferencesReturn {
     () => state.textModelId,
     (val) => {
       setStoredValue(TEXT_MODEL_ID_KEY, val);
+    },
+  );
+
+  watch(
+    () => state.imageGenerationBackend,
+    (val) => {
+      setStoredValue(IMAGE_GENERATION_BACKEND_KEY, val);
     },
   );
 

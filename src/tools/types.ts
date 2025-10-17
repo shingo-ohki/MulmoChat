@@ -1,7 +1,9 @@
 import type { StartApiResponse } from "../../server/types";
+import type { UserPreferencesState } from "../composables/useUserPreferences";
 
 export interface ToolContext {
   currentResult: ToolResult<any> | null;
+  userPreferences?: UserPreferencesState;
 }
 
 export interface ToolResult<T = Record<string, any>, J = any> {
