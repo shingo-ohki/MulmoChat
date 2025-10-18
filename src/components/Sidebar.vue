@@ -545,6 +545,11 @@ function getModeIcon(): string {
 }
 
 function handleEnterKey(event: KeyboardEvent): void {
+  // Don't submit if IME is composing (e.g., converting kana to kanji in Japanese)
+  if (event.isComposing) {
+    return;
+  }
+
   // Don't submit if text is empty
   if (!props.userInput.trim()) {
     event.preventDefault();
