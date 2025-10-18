@@ -2,6 +2,7 @@ import { ToolPlugin, ToolContext, ToolResult } from "../types";
 import MarkdownView from "../views/markdown.vue";
 import MarkdownPreview from "../previews/markdown.vue";
 import { loadBlankImageBase64 } from "./mulmocast";
+import { generateImageWithBackend } from "./generateImage";
 
 const toolName = "presentDocument";
 
@@ -56,20 +57,15 @@ const pushMarkdown = async (
       const imageId = `image_${i}`;
 
       try {
-        // Generate the image using the API
-        const response = await fetch("/api/generate-image", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ prompt, images: [blankImageBase64] }),
-        });
+        // Generate the image using the shared backend-aware function
+        const result = await generateImageWithBackend(
+          prompt,
+          [blankImageBase64],
+          context,
+        );
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.imageData) {
-            images[imageId] = `data:image/png;base64,${data.imageData}`;
-          }
+        if (result.success && result.imageData) {
+          images[imageId] = `data:image/png;base64,${result.imageData}`;
         }
       } catch (error) {
         console.error(`Failed to generate image for prompt: ${prompt}`, error);

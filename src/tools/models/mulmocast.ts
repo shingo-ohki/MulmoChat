@@ -3,6 +3,7 @@ import MulmocastView from "../views/mulmocast.vue";
 import MulmocastPreview from "../previews/mulmocast.vue";
 import type { MulmoScript } from "mulmocast";
 import { v4 as uuidv4 } from "uuid";
+import { generateImageWithBackend } from "./generateImage";
 
 const toolName = "showPresentation";
 const dryRun = false;
@@ -140,19 +141,11 @@ const mulmocast = async (
       };
     }
     try {
-      const response = await fetch("/api/generate-image", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ prompt, images: imageRefs }),
-      });
+      // Generate the image using the shared backend-aware function
+      const result = await generateImageWithBackend(prompt, imageRefs, context);
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.imageData) {
-          return { id: beat.id, imageData: data.imageData };
-        }
+      if (result.success && result.imageData) {
+        return { id: beat.id, imageData: result.imageData };
       }
     } catch (error) {
       // Notice that we just display the error and return null for the image data

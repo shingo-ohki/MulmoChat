@@ -26,17 +26,26 @@ const toolDefinition = {
   },
 };
 
-export async function generateImageCommon(
-  context: ToolContext,
+/**
+ * Shared function to generate images with backend selection support.
+ * Can be used by any plugin that needs image generation.
+ *
+ * @param prompt - The image generation prompt
+ * @param images - Array of base64 image strings (without data URL prefix)
+ * @param context - Optional ToolContext for backend configuration
+ * @returns Normalized response with success status and imageData
+ */
+export async function generateImageWithBackend(
   prompt: string,
-  editImage: boolean,
-): Promise<ToolResult<ImageToolData>> {
+  images: string[],
+  context?: ToolContext,
+): Promise<{ success: boolean; imageData?: string; message?: string }> {
   try {
     // Determine which backend to use (new config system takes precedence)
     const backend =
-      context.getPluginConfig?.("imageGenerationBackend") ||
-      context.userPreferences?.pluginConfigs?.["imageGenerationBackend"] ||
-      context.userPreferences?.imageGenerationBackend ||
+      context?.getPluginConfig?.("imageGenerationBackend") ||
+      context?.userPreferences?.pluginConfigs?.["imageGenerationBackend"] ||
+      context?.userPreferences?.imageGenerationBackend ||
       "gemini";
     const endpoint =
       backend === "comfyui"
@@ -50,15 +59,7 @@ export async function generateImageCommon(
       },
       body: JSON.stringify({
         prompt,
-        images:
-          editImage && context.currentResult?.data?.imageData
-            ? [
-                context.currentResult.data.imageData.replace(
-                  /^data:image\/[^;]+;base64,/,
-                  "",
-                ),
-              ]
-            : [],
+        images,
       }),
     });
 
@@ -76,20 +77,55 @@ export async function generateImageCommon(
       data.images.length > 0
     ) {
       return {
-        data: {
-          imageData: `data:image/png;base64,${data.images[0]}`,
-          prompt,
-        },
-        message: "image generation succeeded",
-        instructions:
-          "Acknowledge that the image was generated and has been already presented to the user.",
+        success: true,
+        imageData: data.images[0],
       };
     }
     // Handle Gemini response (single image)
     else if (data.success && data.imageData) {
       return {
+        success: true,
+        imageData: data.imageData,
+      };
+    } else {
+      console.error("ERR:1\n no image data", data);
+      return {
+        success: false,
+        message: data.message || "image generation failed",
+      };
+    }
+  } catch (error) {
+    console.error("ERR: exception\n Image generation failed", error);
+    return {
+      success: false,
+      message: "image generation failed",
+    };
+  }
+}
+
+export async function generateImageCommon(
+  context: ToolContext,
+  prompt: string,
+  editImage: boolean,
+): Promise<ToolResult<ImageToolData>> {
+  try {
+    // Prepare images array for the shared function
+    const images =
+      editImage && context.currentResult?.data?.imageData
+        ? [
+            context.currentResult.data.imageData.replace(
+              /^data:image\/[^;]+;base64,/,
+              "",
+            ),
+          ]
+        : [];
+
+    const result = await generateImageWithBackend(prompt, images, context);
+
+    if (result.success && result.imageData) {
+      return {
         data: {
-          imageData: `data:image/png;base64,${data.imageData}`,
+          imageData: `data:image/png;base64,${result.imageData}`,
           prompt,
         },
         message: "image generation succeeded",
@@ -97,9 +133,8 @@ export async function generateImageCommon(
           "Acknowledge that the image was generated and has been already presented to the user.",
       };
     } else {
-      console.error("ERR:1\n no image data", data);
       return {
-        message: data.message || "image generation failed",
+        message: result.message || "image generation failed",
         instructions: "Acknowledge that the image generation failed.",
       };
     }
