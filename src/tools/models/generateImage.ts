@@ -38,7 +38,10 @@ export async function generateImageCommon(
       context.userPreferences?.pluginConfigs?.["imageGenerationBackend"] ||
       context.userPreferences?.imageGenerationBackend ||
       "gemini";
-    const endpoint = backend === "comfyui" ? "/api/generate-image/comfy" : "/api/generate-image";
+    const endpoint =
+      backend === "comfyui"
+        ? "/api/generate-image/comfy"
+        : "/api/generate-image";
 
     const response = await fetch(endpoint, {
       method: "POST",
@@ -66,7 +69,12 @@ export async function generateImageCommon(
     const data = await response.json();
 
     // Handle ComfyUI response (array of images)
-    if (backend === "comfyui" && data.success && data.images && data.images.length > 0) {
+    if (
+      backend === "comfyui" &&
+      data.success &&
+      data.images &&
+      data.images.length > 0
+    ) {
       return {
         data: {
           imageData: `data:image/png;base64,${data.images[0]}`,

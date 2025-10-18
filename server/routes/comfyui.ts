@@ -212,8 +212,7 @@ router.post(
     if (!modelValue || modelValue.trim().length === 0) {
       res.status(400).json({
         error: "Model is required",
-        details:
-          "Set COMFYUI_DEFAULT_MODEL or pass model in the request body.",
+        details: "Set COMFYUI_DEFAULT_MODEL or pass model in the request body.",
       });
       return;
     }

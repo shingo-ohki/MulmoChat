@@ -127,7 +127,9 @@ export function useUserPreferences(): UseUserPreferencesReturn {
     modelId: getStoredValue(MODEL_ID_KEY) || DEFAULT_REALTIME_MODEL_ID,
     modelKind: storedModelKind,
     textModelId: getStoredValue(TEXT_MODEL_ID_KEY) || DEFAULT_TEXT_MODEL.rawId,
-    imageGenerationBackend: (getStoredValue(IMAGE_GENERATION_BACKEND_KEY) as "gemini" | "comfyui") || "gemini",
+    imageGenerationBackend:
+      (getStoredValue(IMAGE_GENERATION_BACKEND_KEY) as "gemini" | "comfyui") ||
+      "gemini",
     pluginConfigs: migrateOldConfigs(),
   });
 

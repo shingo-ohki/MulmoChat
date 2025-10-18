@@ -249,7 +249,7 @@ onMounted(() => {
 });
 
 // Helper function to get plugin config values
-const getPluginConfig = <T = any>(key: string): T | undefined => {
+const getPluginConfig = <T = any,>(key: string): T | undefined => {
   return userPreferences.pluginConfigs[key] as T | undefined;
 };
 
