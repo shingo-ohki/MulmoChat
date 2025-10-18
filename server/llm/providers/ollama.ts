@@ -30,6 +30,65 @@ function getOllamaBaseUrl(): string {
   );
 }
 
+function stripCodeFence(content: string): string {
+  const trimmed = content.trim();
+  if (!trimmed.startsWith("```") || trimmed.lastIndexOf("```") === 0) {
+    return trimmed;
+  }
+
+  const firstFence = trimmed.indexOf("\n");
+  if (firstFence === -1) {
+    return trimmed;
+  }
+
+  const withoutFence = trimmed.slice(firstFence + 1);
+  const closingIndex = withoutFence.lastIndexOf("```");
+  if (closingIndex === -1) {
+    return trimmed;
+  }
+
+  return withoutFence.slice(0, closingIndex).trim();
+}
+
+function normalizeToolCallsFromText(text: string): ToolCall[] {
+  if (!text?.trim()) {
+    return [];
+  }
+
+  const candidate = stripCodeFence(text);
+
+  try {
+    const parsed = JSON.parse(candidate);
+    const asArray = Array.isArray(parsed) ? parsed : [parsed];
+
+    const calls: ToolCall[] = [];
+    asArray.forEach((item, index) => {
+      if (!item || typeof item !== "object") {
+        return;
+      }
+      const name = (item as { name?: unknown }).name;
+      const args = (item as { arguments?: unknown }).arguments;
+
+      if (typeof name !== "string" || !name) {
+        return;
+      }
+
+      const serializedArgs =
+        typeof args === "string" ? args : JSON.stringify(args ?? {});
+
+      calls.push({
+        id: `fallback_call_${Date.now()}_${index}`,
+        name,
+        arguments: serializedArgs,
+      });
+    });
+
+    return calls;
+  } catch {
+    return [];
+  }
+}
+
 export async function generateWithOllama(
   params: ProviderGenerateParams,
 ): Promise<TextGenerationResult> {
@@ -101,14 +160,26 @@ export async function generateWithOllama(
   const text = data.message?.content ?? data.response ?? "";
 
   // Extract tool calls if present
-  const toolCalls: ToolCall[] = [];
-  if (data.message?.tool_calls) {
+  let toolCalls: ToolCall[] = [];
+
+  // First, try to extract native tool calls from Ollama response
+  if (data.message?.tool_calls && data.message.tool_calls.length > 0) {
     for (const tc of data.message.tool_calls) {
       toolCalls.push({
         id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: tc.function.name,
         arguments: JSON.stringify(tc.function.arguments),
       });
+    }
+  }
+
+  // Fallback: If no native tool calls but text looks like JSON tool calls,
+  // try to parse tool calls from text (for models like phi-4-mini that
+  // return tool calls as JSON in the response text)
+  if (toolCalls.length === 0 && text.trim()) {
+    const fallbackCalls = normalizeToolCallsFromText(text);
+    if (fallbackCalls.length > 0) {
+      toolCalls = fallbackCalls;
     }
   }
 
