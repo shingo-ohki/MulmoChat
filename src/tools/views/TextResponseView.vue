@@ -37,7 +37,18 @@ const transportKind = computed(
 
 const renderedHtml = computed(() => {
   if (!messageText.value) return "";
-  return marked(messageText.value);
+
+  // Process <think> blocks to make them grey
+  const processedText = messageText.value.replace(
+    /<think>([\s\S]*?)<\/think>/g,
+    (_, content) => {
+      // Render the think block content as markdown and wrap in a styled div
+      const thinkContent = marked(content.trim());
+      return `<div class="think-block">${thinkContent}</div>`;
+    }
+  );
+
+  return marked(processedText);
 });
 
 const speakerLabel = computed(() => {
@@ -179,5 +190,24 @@ const roleTheme = computed(() => {
   border: none;
   border-top: 1px solid #ddd;
   margin: 1.5em 0;
+}
+
+.markdown-content :deep(.think-block) {
+  color: #6b7280;
+  background-color: #f9fafb;
+  border-left: 3px solid #d1d5db;
+  padding: 0.75em 1em;
+  margin: 1em 0;
+  border-radius: 4px;
+  font-style: italic;
+}
+
+.markdown-content :deep(.think-block p) {
+  color: #6b7280;
+}
+
+.markdown-content :deep(.think-block code) {
+  background-color: #e5e7eb;
+  color: #4b5563;
 }
 </style>
