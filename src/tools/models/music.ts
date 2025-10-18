@@ -2,7 +2,7 @@ import { ToolPlugin, ToolContext, ToolResult } from "../types";
 import MusicView from "../views/music.vue";
 import MusicPreview from "../previews/music.vue";
 
-const toolName = "pushMusic";
+const toolName = "showMusic";
 
 export interface MusicToolData {
   musicXML: string;

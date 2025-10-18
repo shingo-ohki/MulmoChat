@@ -112,7 +112,7 @@ const renderedHtml = computed(() => {
     console.error("No markdown data in result:", props.selectedResult);
     return "";
   }
-  console.log("Rendering markdown:", props.selectedResult.data.markdown);
+  // console.log("Rendering markdown:", props.selectedResult.data.markdown);
   return marked(props.selectedResult.data.markdown);
 });
 

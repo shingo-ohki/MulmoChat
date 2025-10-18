@@ -3,7 +3,7 @@ import MarkdownView from "../views/markdown.vue";
 import MarkdownPreview from "../previews/markdown.vue";
 import { loadBlankImageBase64 } from "./mulmocast";
 
-const toolName = "pushMarkdown";
+const toolName = "presentDocument";
 
 export interface MarkdownToolData {
   markdown: string;

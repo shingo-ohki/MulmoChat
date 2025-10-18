@@ -4,7 +4,7 @@ import MulmocastPreview from "../previews/mulmocast.vue";
 import type { MulmoScript } from "mulmocast";
 import { v4 as uuidv4 } from "uuid";
 
-const toolName = "pushMulmoScript";
+const toolName = "showPresentation";
 const dryRun = false;
 
 export interface MulmocastToolData {

@@ -2,7 +2,7 @@ import { ToolPlugin, ToolContext, ToolResult } from "../types";
 import ExaView from "../views/exa.vue";
 import ExaPreview from "../previews/exa.vue";
 
-const toolName = "exaSearch";
+const toolName = "searchWeb";
 
 export interface ExaSearchResult {
   id: string;
