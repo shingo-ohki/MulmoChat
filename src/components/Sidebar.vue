@@ -28,6 +28,7 @@
             Stop
           </button>
           <button
+            v-if="supportsAudioInput"
             @click="$emit('setMute', !isMuted)"
             class="px-3 py-2 rounded border flex items-center justify-center"
             :class="
@@ -36,7 +37,6 @@
                 : 'bg-gray-100 text-gray-600 border-gray-300'
             "
             :title="isMuted ? 'Unmute microphone' : 'Mute microphone'"
-            :disabled="!supportsAudioInput"
           >
             <span class="material-icons text-lg">{{
               isMuted ? "mic_off" : "mic"
