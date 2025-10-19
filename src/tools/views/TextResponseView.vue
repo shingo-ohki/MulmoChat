@@ -45,7 +45,7 @@ const renderedHtml = computed(() => {
       // Render the think block content as markdown and wrap in a styled div
       const thinkContent = marked(content.trim());
       return `<div class="think-block">${thinkContent}</div>`;
-    }
+    },
   );
 
   return marked(processedText);
