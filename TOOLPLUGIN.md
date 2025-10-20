@@ -4,6 +4,7 @@ This guide explains how to create new tool plugins for MulmoChat. Tool plugins e
 
 ## Table of Contents
 
+- [Key Innovation](#key-innovation)
 - [Architecture Overview](#architecture-overview)
 - [Quick Start](#quick-start)
 - [Plugin Interface](#plugin-interface)
@@ -14,6 +15,37 @@ This guide explains how to create new tool plugins for MulmoChat. Tool plugins e
 - [Advanced Features](#advanced-features)
 - [Best Practices](#best-practices)
 - [Testing Your Plugin](#testing-your-plugin)
+
+## Key Innovation
+
+**MulmoChat extends OpenAI's function calling mechanism to enable direct GUI communication between plugins and users.**
+
+Traditional function calling systems follow this pattern:
+```
+User → AI → Function Call → Backend → JSON Response → AI → User
+```
+
+MulmoChat's innovation adds a **visual layer** to this flow:
+```
+User → AI → Function Call → Plugin Execution → Rich GUI Result → User
+                    ↓
+                AI receives JSON summary for context
+```
+
+**What this means:**
+- **Dual Output:** Each plugin returns both machine-readable data (for the AI) and human-readable UI (for the user)
+- **Rich Interactions:** Users see images, maps, interactive games, videos—not just text
+- **Persistent Results:** Plugin outputs remain visible in the sidebar and can be re-selected
+- **Visual Context:** The AI knows what the user is seeing and can reference it naturally
+- **Bidirectional Communication:** Users can interact with plugin UIs while conversing with the AI
+
+**Example:** When the AI calls `generateImage("sunset over mountains")`:
+1. Plugin generates the image
+2. **User sees:** Full-resolution image rendered on canvas
+3. **AI receives:** `"Image generated successfully and displayed to user"`
+4. Conversation continues with both parties aware of the visual context
+
+This architecture transforms function calling from a backend integration pattern into a **multimodal user experience**.
 
 ## Architecture Overview
 
@@ -34,6 +66,7 @@ src/tools/
 ```
 
 **Key Principles:**
+- **GUI-First Function Calling:** Plugins provide both visual output and AI context
 - **Self-contained:** Each plugin defines its own behavior, UI, and configuration
 - **No core changes:** Adding a plugin doesn't require modifying App.vue or composables
 - **Type-safe:** Full TypeScript support with interfaces
@@ -199,6 +232,8 @@ export interface ToolContext {
 
 ### ToolResult Interface
 
+**This is where the dual-output innovation happens.**
+
 Located in `src/tools/types.ts:10-22`:
 
 ```typescript
@@ -207,31 +242,51 @@ export interface ToolResult<T = Record<string, any>, J = any> {
   toolName?: string;
   uuid?: string;
 
+  // ==========================================
+  // AI Communication (Function Calling Output)
+  // ==========================================
+
   // Required: Status message sent back to the AI
+  // This is what the AI "hears" about the operation
   message: string;
 
-  // Optional: Display title (defaults to tool name)
-  title?: string;
-
   // Optional: Data sent to the AI as JSON
+  // Structured data the AI can reason about
   jsonData?: J;
 
   // Optional: Follow-up instructions for the AI
+  // Guide the AI's next response
   instructions?: string;
 
   // Optional: If true, instructions sent even if user disabled them
   instructionsRequired?: boolean;
 
-  // Optional: If true, updates existing result instead of creating new one
-  updating?: boolean;
+  // ==========================================
+  // User Communication (GUI Output)
+  // ==========================================
 
   // Optional: Plugin-specific data for UI rendering
+  // This is what the user SEES (images, maps, interactive content)
   data?: T;
 
+  // Optional: Display title (defaults to tool name)
+  // Shown in sidebar preview
+  title?: string;
+
   // Optional: Plugin-specific view state
+  // Manages interactive UI state
   viewState?: Record<string, any>;
+
+  // ==========================================
+  // System Behavior
+  // ==========================================
+
+  // Optional: If true, updates existing result instead of creating new one
+  updating?: boolean;
 }
 ```
+
+**Key Concept:** The `message` and `jsonData` fields inform the AI, while the `data` field (rendered by your view component) informs the user visually.
 
 ## Creating a Basic Plugin
 
@@ -281,14 +336,27 @@ const execute = async (
     const data = await response.json();
 
     return {
+      // ==========================================
+      // GUI Output - What the USER sees
+      // ==========================================
       data: {
         city: data.city,
         temperature: data.temp,
         condition: data.condition,
         humidity: data.humidity,
       },
+      // This data will be rendered by your view component
+      // User sees: Beautiful weather visualization on canvas
+
+      // ==========================================
+      // Function Calling Output - What the AI receives
+      // ==========================================
       message: `Weather for ${city}: ${data.temp}°C, ${data.condition}`,
+      // AI receives: "Weather for Tokyo: 22°C, Sunny"
+
       instructions: "Describe the weather to the user in a natural way",
+      // AI knows: "The user can already SEE the weather widget,
+      //            so I should conversationally reference it"
     };
   } catch (error) {
     return {
@@ -322,7 +390,43 @@ const pluginList = [
 
 That's it! Your basic plugin is ready.
 
+### Understanding the Dual-Output Flow
+
+Here's what happens when the AI calls your plugin:
+
+```
+User: "What's the weather in Tokyo?"
+  ↓
+AI: Calls weather({ city: "Tokyo" })
+  ↓
+Plugin executes and returns:
+  {
+    data: { city: "Tokyo", temp: 22, ... },     ← Rendered as GUI
+    message: "Weather for Tokyo: 22°C, Sunny",  ← Sent to AI
+    instructions: "Describe naturally"          ← Sent to AI
+  }
+  ↓
+User sees: Beautiful weather widget on canvas
+AI receives: "Weather for Tokyo: 22°C, Sunny"
+  ↓
+AI responds: "I can see Tokyo is enjoying lovely weather at 22°C with sunny skies!"
+```
+
+**Real-World Examples from MulmoChat:**
+
+| Plugin | User Sees (GUI) | AI Receives (Message) |
+|--------|-----------------|----------------------|
+| `generateImage` | Full-resolution image on canvas | "Image generated and displayed" |
+| `map` | Interactive Google Map | "Map showing [location] displayed to user" |
+| `browse` | Rendered webpage content | "Webpage content: [summary]" |
+| `othello` | Interactive game board | "Game board updated, it's [player]'s turn" |
+| `quiz` | Quiz interface with questions | "Quiz question displayed: [question]" |
+
+This pattern allows the AI to maintain conversational context while users enjoy rich visual experiences.
+
 ## Adding UI Components
+
+**This is where you define what the user actually SEES.**
 
 ### Preview Component (Sidebar)
 
@@ -705,21 +809,52 @@ const execute = async (
 - Use the provided interfaces and context
 - Don't access global state directly
 
-### 5. Provide Clear Feedback
+### 5. Design for Dual-Output
+
+**Always think about both audiences:**
+
+```typescript
+// ❌ Bad: Only considers the AI
+return {
+  message: "Operation completed successfully",
+};
+
+// ✅ Good: Provides rich GUI + clear AI feedback
+return {
+  // User sees beautiful visualization
+  data: {
+    chart: chartData,
+    metrics: detailedMetrics,
+    visualization: svg,
+  },
+  // AI understands what happened
+  message: "Generated sales chart showing 23% growth in Q4",
+  // AI knows how to respond naturally
+  instructions: "Reference the chart the user is seeing and highlight key insights",
+};
+```
+
+**Key guidelines:**
+- The `message` should be concise but informative for the AI
+- The `data` should be complete and render beautifully
+- The `instructions` should acknowledge that the user can SEE the result
+- Think: "What does the AI need to know?" vs "What does the user need to see?"
+
+### 6. Provide Clear Feedback
 
 - Use descriptive `generatingMessage` text
 - Provide helpful `instructions` for the AI
 - Include user-friendly error messages
 - Add titles to results for clarity
 
-### 6. Optimize Performance
+### 7. Optimize Performance
 
 - Cache repeated API calls when appropriate
 - Use `delayAfterExecution` for rate-limited APIs
 - Lazy-load heavy dependencies
 - Keep UI components lightweight
 
-### 7. Configuration Guidelines
+### 8. Configuration Guidelines
 
 - Use sensible defaults
 - Provide clear labels and descriptions
@@ -848,18 +983,51 @@ const execute = async (
 };
 ```
 
+## Key Takeaways
+
+**MulmoChat's plugin architecture extends OpenAI's function calling with visual communication:**
+
+1. **Traditional Function Calling:**
+   - AI calls function → Gets JSON → Describes result to user
+   - User only hears about the result through text
+
+2. **MulmoChat's GUI-Enhanced Function Calling:**
+   - AI calls plugin → User sees rich GUI + AI gets context
+   - User experiences the result directly through visualization
+   - AI references what the user is seeing
+
+**This creates a fundamentally different interaction model:**
+- Users can explore results visually (maps, images, games) while conversing
+- The AI maintains awareness of the visual context
+- Function calls become UI events, not just data transformations
+- Multimodal experiences emerge from standard function calling
+
+**When building plugins, remember:**
+- You're not just processing data—you're creating user experiences
+- The `data` field is as important as the `message` field
+- Always design for both the AI's understanding and the user's visual experience
+- The GUI is not an afterthought—it's the primary innovation
+
 ## Next Steps
 
-1. Review existing plugins in `src/tools/models/` for more examples
+1. Review existing plugins in `src/tools/models/` for more examples:
+   - `generateImage.ts` - Image generation with visual output
+   - `map.ts` - Interactive Google Maps integration
+   - `othello.ts` - Stateful interactive game
+   - `browse.ts` - Web content rendering
+
 2. Check out the plugin types in `src/tools/types.ts`
 3. Read the main project documentation in `CLAUDE.md`
 4. Explore the composables in `src/composables/` to understand the system
 
 ## Need Help?
 
-- Review existing plugins: `generateImage.ts`, `browse.ts`, `map.ts`
+- Review existing plugins: `generateImage.ts`, `browse.ts`, `map.ts`, `othello.ts`
 - Check the TypeScript types for detailed interface documentation
 - Test your plugin thoroughly before deploying
 - Follow the architecture principles outlined in `CLAUDE.md`
+- Study how `ToolResult` separates AI communication from GUI rendering
+
+**Remember:** You're building the future of AI-native interfaces where visual experiences and language understanding converge seamlessly.
 
 Happy plugin development!
