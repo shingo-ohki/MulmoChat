@@ -1,12 +1,16 @@
 # MulmoChat
 
-MulmoChat is a prototype of ultimate NLUI application (NL = Natural Language).
+**MulmoChat is a research prototype exploring a new paradigm for multimodal AI chat experiences.**
 
-At this monent, it allows the user to
-- generate images using Google's nano banana
+Traditional chat interfaces are fundamentally text-based—users interact through messages and receive responses as text. MulmoChat reimagines this interaction model: users engage in natural conversation while simultaneously experiencing rich visual and interactive content directly on canvas.
+
+The key insight: **AI conversations don't have to be limited to text streams.** By designing an architecture where visual experiences and language understanding coexist naturally, we enable a fundamentally different way of interacting with AI—one where images materialize, maps become explorable, games turn playable, all within the conversational flow.
+
+MulmoChat demonstrates the architecture, design patterns, and user experience principles necessary to build truly multimodal chat interfaces where visual and textual communication work together seamlessly.
 
 ## Documentation
 
+- **[LLM_OS.md](LLM_OS.md)** - Vision of AI-native operating systems and the future of human-computer interaction
 - **[WHITEPAPER.md](WHITEPAPER.md)** - Conceptual overview and key innovations
 - **[TOOLPLUGIN.md](TOOLPLUGIN.md)** - Tool plugin developer guide for extending MulmoChat with new capabilities
 
