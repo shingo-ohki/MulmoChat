@@ -66,7 +66,7 @@ src/tools/
 ```
 
 **Key Principles:**
-- **GUI-First Function Calling:** Plugins provide both visual output and AI context
+- **Multimodal Function Calling:** Plugins provide both visual output and AI context
 - **Self-contained:** Each plugin defines its own behavior, UI, and configuration
 - **No core changes:** Adding a plugin doesn't require modifying App.vue or composables
 - **Type-safe:** Full TypeScript support with interfaces
@@ -991,7 +991,7 @@ const execute = async (
    - AI calls function → Gets JSON → Describes result to user
    - User only hears about the result through text
 
-2. **MulmoChat's GUI-Enhanced Function Calling:**
+2. **MulmoChat's Multimodal Function Calling:**
    - AI calls plugin → User sees rich GUI + AI gets context
    - User experiences the result directly through visualization
    - AI references what the user is seeing

@@ -1,9 +1,14 @@
 # MulmoChat
 
-MulmoChat is a prototype of ultimate NLUI application (NL = Natural Language). 
+MulmoChat is a prototype of ultimate NLUI application (NL = Natural Language).
 
 At this monent, it allows the user to
 - generate images using Google's nano banana
+
+## Documentation
+
+- **[WHITEPAPER.md](WHITEPAPER.md)** - Conceptual overview and key innovations
+- **[TOOLPLUGIN.md](TOOLPLUGIN.md)** - Tool plugin developer guide for extending MulmoChat with new capabilities
 
 ## Getting Started
 
