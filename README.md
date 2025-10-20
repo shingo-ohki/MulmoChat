@@ -10,9 +10,15 @@ MulmoChat demonstrates the architecture, design patterns, and user experience pr
 
 ## Documentation
 
-- **[LLM_OS.md](LLM_OS.md)** - Vision of AI-native operating systems and the future of human-computer interaction
-- **[WHITEPAPER.md](WHITEPAPER.md)** - Conceptual overview and key innovations
-- **[TOOLPLUGIN.md](TOOLPLUGIN.md)** - Tool plugin developer guide for extending MulmoChat with new capabilities
+- **[LLM_OS.md](LLM_OS.md)**  
+  Who should read: product strategists and designers exploring the AI-native OS mindset.  
+  Start here for the high-level intent paradigm; jump to `WHITEPAPER.md` when you need architecture specifics.
+- **[WHITEPAPER.md](WHITEPAPER.md)**  
+  Who should read: engineers and researchers implementing or evaluating the orchestration stack.  
+  Dive in for system diagrams and workflow detail; reference `LLM_OS.md` for the broader narrative framing.
+- **[TOOLPLUGIN.md](TOOLPLUGIN.md)**  
+  Who should read: developers extending MulmoChat with new capabilities.  
+  Follow this to implement plugins end-to-end, from TypeScript contracts to Vue views and configuration.
 
 ## Getting Started
 
