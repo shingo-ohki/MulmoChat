@@ -65,13 +65,8 @@ const toolDefinition = {
         },
         minItems: 1,
       },
-      style: {
-        type: "string",
-        enum: ["photorealistic", "anime", "comicstrips", "ghibli"],
-        description: "The visual style for image generation",
-      },
     },
-    required: ["title", "lang", "beats", "style"],
+    required: ["title", "lang", "beats"],
     additionalProperties: false,
   },
 };
@@ -82,46 +77,11 @@ const mulmocast = async (
 ): Promise<ToolResult<MulmocastToolData>> => {
   console.log("MULMOSCRIPT:\n", JSON.stringify(args, null, 2));
 
-  const { title, beats, style: styleParam } = args;
+  const { title, beats } = args;
 
-  const styleMap = {
-    photorealistic:
-      "<style>Photo realistic and cinematic. Let the art convey the story and emotions without text. Use the last image for the aspect ratio.</style>",
-    anime:
-      "<style>A highly polished 2D digital illustration in anime and manga style, featuring clean linework, soft shading, vivid colors, and expressive facial detailing. The composition emphasizes clarity and visual impact with a minimalistic background and a strong character focus. The lighting is even and bright, giving the image a crisp and energetic feel, reminiscent of high-quality character art used in Japanese visual novels or mobile games. Let the art convey the story and emotions without text. Use the last image for the aspect ratio.</style>",
-    comicstrips:
-      "<style>Dilbert style multi-panel comic strips in landscape mode. Use speech bubbles with short, natural dialogue (1–6 words). Keep text minimal. Use the last image for the aspect ratio.</style>",
-    ghibli: "<style>Ghibli style.</style>",
-  };
-
-  const style =
-    styleMap[styleParam as keyof typeof styleMap] || styleMap.photorealistic;
-  const images =
-    styleParam === "anime"
-      ? {
-          ani: {
-            type: "image",
-            source: {
-              kind: "url",
-              url: "https://raw.githubusercontent.com/receptron/mulmocast-media/refs/heads/main/characters/ani_h.png",
-            },
-          },
-        }
-      : {};
-  const imageRefs: string[] = [];
-  for (const image of Object.values(images)) {
-    if (image.source.kind === "url") {
-      try {
-        const base64Image = await urlToBase64(image.source.url);
-        imageRefs.push(base64Image);
-      } catch (error) {
-        console.error("Failed to load reference image:", error);
-        // Continue without this image
-      }
-    }
-  }
+  // Reference images for aspect ratio
   const blankImageBase64 = await loadBlankImageBase64();
-  imageRefs.push(blankImageBase64);
+  const imageRefs: string[] = [blankImageBase64];
 
   // Generate beat objects with UUIDs first
   const beatsWithIds = beats.map((beat: { text: string }) => ({
@@ -132,7 +92,7 @@ const mulmocast = async (
 
   // Generate images for each beat concurrently
   const imagePromises = beatsWithIds.map(async (beat) => {
-    const prompt = `generate image appropriate for the text. <text>${beat.text}</text>${style}`;
+    const prompt = `generate image appropriate for the text. <text>${beat.text}</text>. Let the art convey the story and emotions without text. Use the last image for the aspect ratio.`;
     if (dryRun) {
       await new Promise((resolve) => setTimeout(resolve, 5000));
       return {
@@ -142,6 +102,7 @@ const mulmocast = async (
     }
     try {
       // Generate the image using the shared backend-aware function
+      // The global style modifier will be automatically applied
       const result = await generateImageWithBackend(prompt, imageRefs, context);
 
       if (result.success && result.imageData) {
@@ -177,8 +138,6 @@ const mulmocast = async (
     imageParams: {
       provider: "google",
       model: "gemini-2.5-flash-image-preview",
-      style,
-      images,
     },
     audioParams: {
       padding: 0.2,
@@ -227,5 +186,5 @@ export const plugin: ToolPlugin = {
   viewComponent: MulmocastView,
   previewComponent: MulmocastPreview,
   systemPrompt:
-    "Call the pushMulmoScript API to display presentations when the user is asking for a presentation.",
+    "Call the showPresentation API to display presentations when the user is asking for a presentation.",
 };
