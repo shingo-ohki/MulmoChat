@@ -127,5 +127,5 @@ export const plugin: ToolPlugin = {
   viewComponent: MarkdownView,
   previewComponent: MarkdownPreview,
   systemPrompt:
-    "Call the pushMarkdown API to display documents when the user is asking for a document with embedded images.",
+    "Call the presentDocument API to display documents when the user is asking for a document with embedded images.",
 };
