@@ -113,6 +113,4 @@ export const plugin: ToolPlugin<SetImageStyleData> = {
   generatingMessage: "Setting image style...",
   isEnabled: () => true,
   previewComponent: SetImageStylePreview,
-  systemPrompt:
-    "When users request to set a consistent style for images (e.g., 'make all images anime style', 'use oil painting style', 'generate images in cyberpunk style', 'clear the image style'), use the setImageStyle function to configure the style modifier. This will apply to all future image generations automatically.",
 };
