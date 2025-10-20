@@ -11,6 +11,22 @@
 
 This paper presents a technical architecture that reframes human-computer interaction as a **human-AI partnership**, proposing a shift from traditional **Man-Machine Interfaces** to **Man-Machine-AI Interfaces**. Rather than simply replacing static app icons with a conversational layer, we make **natural language conversation** and **intent expression** the primary interface. A Large Language Model (LLM) orchestrates a plugin ecosystem, understanding user intent and invoking appropriate tools through function calling. The key innovation is extending the traditional function calling mechanism (and contemporary MCP-style protocols) to support **multi-modal interaction**: plugins return not only data to the LLM, but also graphical interface components that provide rich visual feedback to users. This dual-channel approach combines the natural interaction of conversation with the power of visual interfaces, allowing users to collaborate with AI systems that surface the right GUI affordances on demand instead of forcing them to operate discrete applications. In this triadic architecture, the AI serves as an intelligent intermediary—the "driver"—between human intent and machine execution.
 
+**Table of Contents**
+- [1. Introduction](#1-introduction)
+- [2. Architectural Overview](#2-architectural-overview)
+- [3. Eliminating the App Icon Paradigm](#3-eliminating-the-app-icon-paradigm)
+- [4. Implementation: MulmoChat Case Study](#4-implementation-mulmochat-case-study)
+- [5. Benefits and Implications](#5-benefits-and-implications)
+- [6. Technical Innovations](#6-technical-innovations)
+- [7. Challenges and Solutions](#7-challenges-and-solutions)
+- [8. Future Directions](#8-future-directions)
+- [9. Comparison with Existing Paradigms](#9-comparison-with-existing-paradigms)
+- [10. Philosophical Implications](#10-philosophical-implications)
+- [11. Conclusion](#11-conclusion)
+- [References](#references)
+- [Appendix A: Plugin Interface Specification](#appendix-a-plugin-interface-specification)
+- [Appendix B: Example Plugin Implementation](#appendix-b-example-plugin-implementation)
+
 ## 1. Introduction
 
 ### 1.1 The App Icon Problem
