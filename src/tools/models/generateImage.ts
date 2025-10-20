@@ -1,7 +1,9 @@
 import { ToolPlugin, ToolContext, ToolResult } from "../types";
 import ImageView from "../views/image.vue";
 import ImagePreview from "../previews/image.vue";
-import ImageGenerationConfig from "../configs/ImageGenerationConfig.vue";
+import ImageGenerationConfig, {
+  type ImageGenerationConfigValue,
+} from "../configs/ImageGenerationConfig.vue";
 
 const toolName = "generateImage";
 
@@ -41,12 +43,30 @@ export async function generateImageWithBackend(
   context?: ToolContext,
 ): Promise<{ success: boolean; imageData?: string; message?: string }> {
   try {
-    // Determine which backend to use (new config system takes precedence)
-    const backend =
+    // Get config (can be legacy string or new object format)
+    const config =
       context?.getPluginConfig?.("imageGenerationBackend") ||
       context?.userPreferences?.pluginConfigs?.["imageGenerationBackend"] ||
       context?.userPreferences?.imageGenerationBackend ||
       "gemini";
+
+    // Handle legacy string format vs new object format
+    let backend: "gemini" | "comfyui";
+    let styleModifier = "";
+
+    if (typeof config === "string") {
+      backend = config;
+    } else {
+      backend = (config as ImageGenerationConfigValue).backend || "gemini";
+      styleModifier =
+        (config as ImageGenerationConfigValue).styleModifier || "";
+    }
+
+    // Append style modifier to prompt if provided
+    const finalPrompt = styleModifier.trim()
+      ? `${prompt}, ${styleModifier}`
+      : prompt;
+
     const endpoint =
       backend === "comfyui"
         ? "/api/generate-image/comfy"
@@ -58,7 +78,7 @@ export async function generateImageWithBackend(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        prompt,
+        prompt: finalPrompt,
         images,
       }),
     });
@@ -183,7 +203,10 @@ export const plugin: ToolPlugin<ImageToolData> = {
     "When you are talking about places, objects, people, movies, books and other things, you MUST use the generateImage API to draw pictures to make the conversation more engaging.",
   config: {
     key: "imageGenerationBackend",
-    defaultValue: "gemini",
+    defaultValue: {
+      backend: "gemini",
+      styleModifier: "",
+    } as ImageGenerationConfigValue,
     component: ImageGenerationConfig,
   },
 };
