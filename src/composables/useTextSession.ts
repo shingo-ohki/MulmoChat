@@ -482,5 +482,6 @@ export function useTextSession(
     setLocalAudioEnabled,
     attachRemoteAudioElement,
     registerEventHandlers,
+    getLocalStream: () => null, // Text session doesn't have audio stream
   };
 }

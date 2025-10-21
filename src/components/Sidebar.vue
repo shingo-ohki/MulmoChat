@@ -308,6 +308,25 @@
           </div>
 
           <div>
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                :checked="enableVoiceTranscription"
+                @change="
+                  $emit(
+                    'update:enableVoiceTranscription',
+                    ($event.target as HTMLInputElement).checked
+                  )
+                "
+                class="rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+              />
+              <span class="text-sm font-medium text-gray-700">
+                音声入力をテキストとして表示する
+              </span>
+            </label>
+          </div>
+
+          <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
               Custom Instructions
             </label>
@@ -439,6 +458,7 @@ const props = defineProps<{
   supportsAudioOutput: boolean;
   imageGenerationBackend: "gemini" | "comfyui";
   pluginConfigs: Record<string, any>;
+  enableVoiceTranscription: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -454,6 +474,7 @@ const emit = defineEmits<{
   "update:enabledPlugins": [value: Record<string, boolean>];
   "update:customInstructions": [value: string];
   "update:modelId": [value: string];
+  "update:enableVoiceTranscription": [value: boolean];
   "update:modelKind": [value: "voice-realtime" | "text-rest"];
   "update:textModelId": [value: string];
   "update:imageGenerationBackend": [value: "gemini" | "comfyui"];

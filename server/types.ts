@@ -28,3 +28,21 @@ export interface TextGenerationResponse {
   error?: string;
   details?: string;
 }
+
+export interface VoiceTranscriptionRequest {
+  // optional model override (e.g. 'whisper-1')
+  model?: string;
+}
+
+export interface VoiceTranscriptionResponse {
+  success: boolean;
+  text?: string;
+  error?: string;
+  details?: string;
+}
+
+export interface VoiceChatResponse {
+  success: boolean;
+  transcription?: VoiceTranscriptionResponse;
+  chat?: TextGenerationResponse;
+}

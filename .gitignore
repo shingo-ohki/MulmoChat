@@ -4,3 +4,39 @@ build
 .env
 .DS_Store
 output
+
+# Vue TypeScript compilation artifacts
+src/**/*.vue.js
+src/**/*.js.map
+
+# TypeScript compilation artifacts to .js (keep test-*.js and config files)
+src/composables/**/*.js
+!src/composables/**/*.config.js
+src/config/**/*.js
+!src/config/**/*.config.js
+src/session/**/*.js
+!src/session/**/*.config.js
+src/tools/**/*.js
+!src/tools/**/*.config.js
+
+# TypeScript declaration maps
+src/**/*.d.ts.map
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Vite build artifacts
+vite.config.js
+vite.config.d.ts
+
+# Server transpiled files
+server/**/*.js
+server/**/*.d.ts
+!server/**/*.test.js
+!server/**/*.config.js
+
+# Test files
+test-*.cjs
+test-*.js
+
+.idea/

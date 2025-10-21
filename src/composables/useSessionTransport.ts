@@ -67,6 +67,7 @@ export function useSessionTransport(
     connecting: computed(() => activeSession.value.connecting.value),
     isMuted: computed(() => activeSession.value.isMuted.value),
     startResponse: computed(() => activeSession.value.startResponse.value),
+    getLocalStream: () => activeSession.value.getLocalStream(),
     isDataChannelOpen: () => activeSession.value.isDataChannelOpen(),
     startChat: () => activeSession.value.startChat(),
     stopChat: () => activeSession.value.stopChat(),

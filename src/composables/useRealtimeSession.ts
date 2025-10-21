@@ -48,6 +48,7 @@ export interface UseRealtimeSessionReturn {
   registerEventHandlers: (
     handlers: Partial<RealtimeSessionEventHandlers>,
   ) => void;
+  getLocalStream: () => BrowserMediaStream | null;
 }
 
 interface WebRtcState {
@@ -398,6 +399,9 @@ export function useRealtimeSession(
 
   const isDataChannelOpen = () => webrtc.dc?.readyState === "open";
 
+  // Get local audio stream for voice transcription
+  const getLocalStream = () => webRtcState.localStream;
+
   return {
     chatActive,
     conversationActive,
@@ -405,6 +409,7 @@ export function useRealtimeSession(
     isMuted,
     startResponse,
     isDataChannelOpen,
+    getLocalStream, // Added for voice transcription
     startChat,
     stopChat,
     sendUserMessage,

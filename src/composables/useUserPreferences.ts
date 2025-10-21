@@ -21,6 +21,7 @@ const MODEL_KIND_KEY = "model_kind_v2";
 const TEXT_MODEL_ID_KEY = "text_model_id_v1";
 const IMAGE_GENERATION_BACKEND_KEY = "image_generation_backend_v1";
 const PLUGIN_CONFIGS_KEY = "plugin_configs_v1";
+const ENABLE_VOICE_TRANSCRIPTION_KEY = "enable_voice_transcription_v1";
 
 interface StorageLike {
   getItem(key: string): string | null;
@@ -58,6 +59,7 @@ export interface UserPreferencesState {
   textModelId: string;
   imageGenerationBackend: "gemini" | "comfyui";
   pluginConfigs: Record<string, any>;
+  enableVoiceTranscription: boolean;
 }
 
 export interface UseUserPreferencesReturn {
@@ -131,6 +133,8 @@ export function useUserPreferences(): UseUserPreferencesReturn {
       (getStoredValue(IMAGE_GENERATION_BACKEND_KEY) as "gemini" | "comfyui") ||
       "gemini",
     pluginConfigs: migrateOldConfigs(),
+    enableVoiceTranscription:
+      getStoredValue(ENABLE_VOICE_TRANSCRIPTION_KEY) === "true",
   });
 
   watch(
@@ -203,6 +207,13 @@ export function useUserPreferences(): UseUserPreferencesReturn {
       setStoredObject(PLUGIN_CONFIGS_KEY, val);
     },
     { deep: true },
+  );
+
+  watch(
+    () => state.enableVoiceTranscription,
+    (val) => {
+      setStoredValue(ENABLE_VOICE_TRANSCRIPTION_KEY, String(val));
+    },
   );
 
   const buildInstructions = ({ startResponse }: InstructionBuildContext) => {

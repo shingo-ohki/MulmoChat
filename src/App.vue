@@ -35,6 +35,7 @@
         :supports-audio-output="supportsAudioOutput"
         :image-generation-backend="userPreferences.imageGenerationBackend"
         :plugin-configs="userPreferences.pluginConfigs"
+        :enable-voice-transcription="userPreferences.enableVoiceTranscription"
         @start-chat="startChat"
         @stop-chat="stopChat"
         @set-mute="setMute"
@@ -57,12 +58,15 @@
           userPreferences.imageGenerationBackend = $event
         "
         @update:plugin-configs="userPreferences.pluginConfigs = $event"
+        @update:enable-voice-transcription="
+          userPreferences.enableVoiceTranscription = $event
+        "
         @upload-files="handleUploadFiles"
       />
 
       <!-- Main content -->
       <div class="flex-1 flex flex-col">
-        <div class="flex-1 border rounded bg-gray-50 overflow-hidden">
+        <div class="flex-1 border rounded bg-gray-50 overflow-hidden relative">
           <component
             v-if="
               selectedResult &&
@@ -82,6 +86,23 @@
           >
             <div class="text-gray-400 text-lg">Canvas</div>
           </div>
+          
+          <!-- Voice transcription overlay -->
+          <div
+            v-if="userPreferences.enableVoiceTranscription && messages.length > 0"
+            class="absolute bottom-4 left-4 right-4 bg-blue-50 border-2 border-blue-300 rounded-lg p-4 shadow-lg max-h-48 overflow-y-auto"
+          >
+            <div class="text-sm font-semibold text-blue-700 mb-2">音声入力:</div>
+            <div class="space-y-2">
+              <div
+                v-for="(msg, idx) in messages"
+                :key="idx"
+                class="text-base text-gray-800 bg-white rounded px-3 py-2 shadow-sm"
+              >
+                {{ msg }}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -94,10 +115,13 @@ import { toolExecute, getToolPlugin } from "./tools";
 import type { ToolResult } from "./tools";
 import Sidebar from "./components/Sidebar.vue";
 import { useSessionTransport } from "./composables/useSessionTransport";
+import { useRealtimeSession } from "./composables/useRealtimeSession"; // DEBUG
 import { useUserPreferences } from "./composables/useUserPreferences";
 import { useToolResults } from "./composables/useToolResults";
 import { useScrolling } from "./composables/useScrolling";
 import { SESSION_CONFIG } from "./config/session";
+import { useVoiceTranscription } from "./composables/useVoiceTranscription";
+import { useAudioRecorder } from "./composables/useAudioRecorder";
 import { DEFAULT_TEXT_MODEL } from "./config/textModels";
 import type { TextProvidersResponse } from "../server/types";
 
@@ -116,6 +140,10 @@ async function sleep(milliseconds: number): Promise<void> {
 const messages = ref<string[]>([]);
 const currentText = ref("");
 const userInput = ref("");
+
+// Audio recorder for voice transcription
+const audioRecorder = useAudioRecorder();
+const { uploadAudioBlob } = useVoiceTranscription();
 
 interface TextModelOption {
   id: string;
@@ -143,6 +171,7 @@ const scrolling = useScrolling({
 
 const transportKind = computed(() => userPreferences.modelKind);
 
+// Initialize session transport with voice transcription support
 const session = useSessionTransport({
   transportKind,
   buildInstructions: (context) => buildPreferenceInstructions(context),
@@ -171,6 +200,19 @@ const {
   registerEventHandlers,
   capabilities,
 } = session;
+
+// Debug: Check if getLocalStream is available
+console.log("[Debug] session object keys:", Object.keys(session));
+console.log("[Debug] session.getLocalStream type:", typeof session.getLocalStream);
+console.log("[Debug] Full session object:", session);
+
+// DEBUG: Test useRealtimeSession directly
+const debugRealtimeSession = useRealtimeSession({
+  buildInstructions: () => "",
+  buildTools: () => [],
+});
+console.log("[Debug] Direct useRealtimeSession keys:", Object.keys(debugRealtimeSession));
+console.log("[Debug] Direct getLocalStream type:", typeof debugRealtimeSession.getLocalStream);
 
 const supportsAudioInput = computed(
   () => capabilities.value.supportsAudioInput,
@@ -296,26 +338,118 @@ registerEventHandlers({
     currentText.value = "";
   },
   onSpeechStarted: () => {
+    console.log("[VoiceTranscription] onSpeechStarted called");
+    console.log("[VoiceTranscription] isListenerMode:", isListenerMode.value);
+    console.log("[VoiceTranscription] conversationActive:", conversationActive.value);
+    console.log("[VoiceTranscription] enableVoiceTranscription:", userPreferences.enableVoiceTranscription);
+    
+    // For listener mode, log the speech event
     if (isListenerMode.value) {
       console.log("MSG: Speech started");
     }
-  },
-  onSpeechStopped: () => {
-    if (!isListenerMode.value) {
-      return;
+    
+    // Only record user speech (when conversation is NOT active = user is speaking)
+    // Do NOT record when conversationActive = true (AI is responding)
+    if (userPreferences.enableVoiceTranscription && !conversationActive.value) {
+      console.log("[VoiceTranscription] Starting audio recording for transcription (user speech)");
+      
+      // Get the existing WebRTC local stream
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(localStream => {
+          console.log("[VoiceTranscription] Got local stream:", localStream);
+          try {
+            audioRecorder.startRecording(localStream);
+            console.log("[VoiceTranscription] Recording started successfully");
+          } catch (err) {
+            console.error("[VoiceTranscription] Failed to start recording:", err);
+          }
+        })
+        .catch(err => {
+          console.error("[VoiceTranscription] Failed to get media stream:", err);
+        });
+    } else {
+      if (conversationActive.value) {
+        console.log("[VoiceTranscription] Not recording - AI is speaking (conversationActive=true)");
+      } else {
+        console.log("[VoiceTranscription] Not starting recording - transcription disabled");
+      }
     }
-    console.log("MSG: Speech stopped");
-    const timeSinceLastStart = lastSpeechStartedTime.value
-      ? Date.now() - lastSpeechStartedTime.value
-      : 0;
+  },
+  onSpeechStopped: async () => {
+    console.log("[VoiceTranscription] onSpeechStopped called");
+    console.log("[VoiceTranscription] isListenerMode:", isListenerMode.value);
+    console.log("[VoiceTranscription] isRecording:", audioRecorder.isRecording.value);
+    
+    // Handle listener mode specific logic
+    if (isListenerMode.value) {
+      console.log("MSG: Speech stopped");
+      const timeSinceLastStart = lastSpeechStartedTime.value
+        ? Date.now() - lastSpeechStartedTime.value
+        : 0;
 
-    if (timeSinceLastStart > SESSION_CONFIG.LISTENER_MODE_SPEECH_THRESHOLD_MS) {
-      console.log("MSG: Speech stopped for a long time");
-      setLocalAudioEnabled(false);
-      setTimeout(() => {
-        setMute(isMuted.value);
-        lastSpeechStartedTime.value = Date.now();
-      }, SESSION_CONFIG.LISTENER_MODE_AUDIO_GAP_MS);
+      if (timeSinceLastStart > SESSION_CONFIG.LISTENER_MODE_SPEECH_THRESHOLD_MS) {
+        console.log("MSG: Speech stopped for a long time");
+        setLocalAudioEnabled(false);
+        setTimeout(() => {
+          setMute(isMuted.value);
+          lastSpeechStartedTime.value = Date.now();
+        }, SESSION_CONFIG.LISTENER_MODE_AUDIO_GAP_MS);
+      }
+    }
+    
+    // If enabled, upload the recorded audio for transcription
+    if (userPreferences.enableVoiceTranscription && audioRecorder.isRecording.value) {
+      try {
+        console.log("[VoiceTranscription] Stopping recording and uploading for transcription");
+        const recordedBlob = await audioRecorder.stopRecording();
+        console.log("[VoiceTranscription] Recorded blob size:", recordedBlob?.size);
+        
+        if (recordedBlob && recordedBlob.size > 0) {
+          console.log("[VoiceTranscription] Uploading blob to server...");
+          // Convert userLanguage to ISO-639-1 format for Whisper API
+          const languageMap: Record<string, string> = {
+            "en": "en",
+            "ja": "ja",
+            "ko": "ko",
+            "zh": "zh",
+            "es": "es",
+            "fr": "fr",
+            "de": "de",
+          };
+          const whisperLanguage = languageMap[userPreferences.userLanguage] || "en";
+          console.log("[VoiceTranscription] Using language:", whisperLanguage);
+          console.log("[VoiceTranscription] Calling uploadAudioBlob with args:", {
+            blobSize: recordedBlob.size,
+            language: whisperLanguage,
+            argCount: 2
+          });
+          
+          const result = await uploadAudioBlob(recordedBlob, whisperLanguage);
+          console.log("[VoiceTranscription] Upload result:", result);
+          
+          if (result && result.success && result.text) {
+            console.log("[VoiceTranscription] Transcription received:", result.text);
+            // Push transcription into the same pipeline as onTextDelta/completed
+            // We append the full text as a completed message
+            currentText.value += result.text;
+            // Trigger completed handling
+            if (currentText.value.trim()) {
+              messages.value.push(currentText.value);
+            }
+            currentText.value = "";
+          } else {
+            console.warn("[VoiceTranscription] Transcription returned no text", result);
+          }
+        } else {
+          console.warn("[VoiceTranscription] No audio recorded or empty blob");
+        }
+      } catch (e) {
+        console.error("[VoiceTranscription] Failed to upload transcription:", e);
+      } finally {
+        audioRecorder.clearRecording();
+      }
+    } else {
+      console.log("[VoiceTranscription] Not uploading - transcription disabled or not recording");
     }
   },
   onError: (error) => {

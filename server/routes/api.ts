@@ -9,6 +9,7 @@ import pdfRouter from "./pdf";
 import htmlRouter from "./html";
 import textRouter from "./textLLM";
 import comfyRouter from "./comfyui";
+import voiceRouter from "./voice";
 dotenv.config();
 
 const router: Router = express.Router();
@@ -27,6 +28,9 @@ router.use(textRouter);
 
 // Mount ComfyUI routes
 router.use(comfyRouter);
+
+// Mount voice transcription routes
+router.use(voiceRouter);
 
 // Session start endpoint
 router.get("/start", async (req: Request, res: Response): Promise<void> => {
