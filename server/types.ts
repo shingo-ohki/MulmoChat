@@ -46,3 +46,9 @@ export interface VoiceChatResponse {
   transcription?: VoiceTranscriptionResponse;
   chat?: TextGenerationResponse;
 }
+
+export interface OpinionLog {
+  session_id: string;
+  timestamp: string;
+  text: string;
+}

@@ -120,8 +120,7 @@ import { useUserPreferences } from "./composables/useUserPreferences";
 import { useToolResults } from "./composables/useToolResults";
 import { useScrolling } from "./composables/useScrolling";
 import { SESSION_CONFIG } from "./config/session";
-import { useVoiceTranscription } from "./composables/useVoiceTranscription";
-import { useAudioRecorder } from "./composables/useAudioRecorder";
+import { useOpinionLogger } from "./composables/useOpinionLogger";
 import { DEFAULT_TEXT_MODEL } from "./config/textModels";
 import type { TextProvidersResponse } from "../server/types";
 
@@ -133,6 +132,9 @@ const {
   buildTools: buildPreferenceTools,
 } = preferences;
 
+// Session ID for opinion logging
+const sessionId = ref<string>(crypto.randomUUID());
+
 async function sleep(milliseconds: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
@@ -141,9 +143,8 @@ const messages = ref<string[]>([]);
 const currentText = ref("");
 const userInput = ref("");
 
-// Audio recorder for voice transcription
-const audioRecorder = useAudioRecorder();
-const { uploadAudioBlob } = useVoiceTranscription();
+// Opinion logger for CSV recording
+const { logOpinion } = useOpinionLogger();
 
 interface TextModelOption {
   id: string;
@@ -331,55 +332,31 @@ registerEventHandlers({
   onTextDelta: (delta) => {
     currentText.value += delta;
   },
-  onTextCompleted: () => {
-    if (currentText.value.trim()) {
-      messages.value.push(currentText.value);
+  onTextCompleted: async () => {
+    const userText = currentText.value.trim();
+    if (userText) {
+      // Add to messages display
+      messages.value.push(userText);
     }
     currentText.value = "";
   },
-  onSpeechStarted: () => {
-    console.log("[VoiceTranscription] onSpeechStarted called");
-    console.log("[VoiceTranscription] isListenerMode:", isListenerMode.value);
-    console.log("[VoiceTranscription] conversationActive:", conversationActive.value);
-    console.log("[VoiceTranscription] enableVoiceTranscription:", userPreferences.enableVoiceTranscription);
+  onUserTranscription: async (text) => {
+    // User's voice input has been transcribed by Realtime API
+    console.log("[OpinionLogger] User transcription:", text);
     
+    // Log to CSV
+    await logOpinion(sessionId.value, text);
+    
+    // Add to messages display
+    messages.value.push(text);
+  },
+  onSpeechStarted: () => {
     // For listener mode, log the speech event
     if (isListenerMode.value) {
       console.log("MSG: Speech started");
     }
-    
-    // Only record user speech (when conversation is NOT active = user is speaking)
-    // Do NOT record when conversationActive = true (AI is responding)
-    if (userPreferences.enableVoiceTranscription && !conversationActive.value) {
-      console.log("[VoiceTranscription] Starting audio recording for transcription (user speech)");
-      
-      // Get the existing WebRTC local stream
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(localStream => {
-          console.log("[VoiceTranscription] Got local stream:", localStream);
-          try {
-            audioRecorder.startRecording(localStream);
-            console.log("[VoiceTranscription] Recording started successfully");
-          } catch (err) {
-            console.error("[VoiceTranscription] Failed to start recording:", err);
-          }
-        })
-        .catch(err => {
-          console.error("[VoiceTranscription] Failed to get media stream:", err);
-        });
-    } else {
-      if (conversationActive.value) {
-        console.log("[VoiceTranscription] Not recording - AI is speaking (conversationActive=true)");
-      } else {
-        console.log("[VoiceTranscription] Not starting recording - transcription disabled");
-      }
-    }
   },
   onSpeechStopped: async () => {
-    console.log("[VoiceTranscription] onSpeechStopped called");
-    console.log("[VoiceTranscription] isListenerMode:", isListenerMode.value);
-    console.log("[VoiceTranscription] isRecording:", audioRecorder.isRecording.value);
-    
     // Handle listener mode specific logic
     if (isListenerMode.value) {
       console.log("MSG: Speech stopped");
@@ -395,61 +372,6 @@ registerEventHandlers({
           lastSpeechStartedTime.value = Date.now();
         }, SESSION_CONFIG.LISTENER_MODE_AUDIO_GAP_MS);
       }
-    }
-    
-    // If enabled, upload the recorded audio for transcription
-    if (userPreferences.enableVoiceTranscription && audioRecorder.isRecording.value) {
-      try {
-        console.log("[VoiceTranscription] Stopping recording and uploading for transcription");
-        const recordedBlob = await audioRecorder.stopRecording();
-        console.log("[VoiceTranscription] Recorded blob size:", recordedBlob?.size);
-        
-        if (recordedBlob && recordedBlob.size > 0) {
-          console.log("[VoiceTranscription] Uploading blob to server...");
-          // Convert userLanguage to ISO-639-1 format for Whisper API
-          const languageMap: Record<string, string> = {
-            "en": "en",
-            "ja": "ja",
-            "ko": "ko",
-            "zh": "zh",
-            "es": "es",
-            "fr": "fr",
-            "de": "de",
-          };
-          const whisperLanguage = languageMap[userPreferences.userLanguage] || "en";
-          console.log("[VoiceTranscription] Using language:", whisperLanguage);
-          console.log("[VoiceTranscription] Calling uploadAudioBlob with args:", {
-            blobSize: recordedBlob.size,
-            language: whisperLanguage,
-            argCount: 2
-          });
-          
-          const result = await uploadAudioBlob(recordedBlob, whisperLanguage);
-          console.log("[VoiceTranscription] Upload result:", result);
-          
-          if (result && result.success && result.text) {
-            console.log("[VoiceTranscription] Transcription received:", result.text);
-            // Push transcription into the same pipeline as onTextDelta/completed
-            // We append the full text as a completed message
-            currentText.value += result.text;
-            // Trigger completed handling
-            if (currentText.value.trim()) {
-              messages.value.push(currentText.value);
-            }
-            currentText.value = "";
-          } else {
-            console.warn("[VoiceTranscription] Transcription returned no text", result);
-          }
-        } else {
-          console.warn("[VoiceTranscription] No audio recorded or empty blob");
-        }
-      } catch (e) {
-        console.error("[VoiceTranscription] Failed to upload transcription:", e);
-      } finally {
-        audioRecorder.clearRecording();
-      }
-    } else {
-      console.log("[VoiceTranscription] Not uploading - transcription disabled or not recording");
     }
   },
   onError: (error) => {

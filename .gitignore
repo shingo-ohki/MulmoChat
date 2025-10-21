@@ -5,6 +5,9 @@ build
 .DS_Store
 output
 
+# Opinion logs (CSV data)
+opinions.csv
+
 # Vue TypeScript compilation artifacts
 src/**/*.vue.js
 src/**/*.js.map

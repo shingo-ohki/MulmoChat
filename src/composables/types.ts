@@ -40,6 +40,17 @@ export interface ToolCallMessage {
   delta?: string;
   arguments?: string;
   truncated?: boolean;
+  transcript?: string;
+  item?: {
+    type?: string;
+    role?: string;
+    content?: Array<{
+      type?: string;
+      transcript?: string;
+      [key: string]: unknown;
+    }>;
+    [key: string]: unknown;
+  };
   error?: unknown;
   [key: string]: unknown;
 }

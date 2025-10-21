@@ -2,8 +2,9 @@ import express, { Request, Response, Router } from "express";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
 import { puppeteerCrawlerAgent } from "mulmocast";
-import { StartApiResponse } from "../types";
+import { StartApiResponse, OpinionLog } from "../types";
 import { exaSearch, hasExaApiKey } from "../exaSearch";
+import { csvLogger } from "../utils/csvLogger";
 import movieRouter from "./movie";
 import pdfRouter from "./pdf";
 import htmlRouter from "./html";
@@ -307,5 +308,42 @@ router.get(
     }
   },
 );
+
+// Opinion logging endpoint
+router.post("/log_opinion", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { session_id, timestamp, text } = req.body as Partial<OpinionLog>;
+
+    // Validate required fields
+    if (!session_id || !timestamp || !text) {
+      res.status(400).json({ 
+        error: "Missing required fields",
+        details: "session_id, timestamp, and text are required" 
+      });
+      return;
+    }
+
+    // Validate text length (max 10,000 characters)
+    if (text.length > 10000) {
+      res.status(400).json({ 
+        error: "Text too long",
+        details: "Text must be 10,000 characters or less" 
+      });
+      return;
+    }
+
+    // Append to CSV
+    await csvLogger.append({ session_id, timestamp, text });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Failed to log opinion:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    res.status(500).json({
+      error: "Failed to log opinion",
+      details: errorMessage,
+    });
+  }
+});
 
 export default router;

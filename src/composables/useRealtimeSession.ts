@@ -16,6 +16,7 @@ export interface RealtimeSessionEventHandlers {
   onToolCall?: (msg: ToolCallMessage, id: string, argStr: string) => void;
   onTextDelta?: (delta: string) => void;
   onTextCompleted?: () => void;
+  onUserTranscription?: (text: string) => void;
   onConversationStarted?: () => void;
   onConversationFinished?: () => void;
   onSpeechStarted?: () => void;
@@ -114,6 +115,16 @@ export function useRealtimeSession(
       return;
     }
 
+    // Debug: Log all non-delta events to see what we receive
+    if (msg.type && !msg.type.includes("delta")) {
+      console.log("[Realtime Event]", msg.type, msg);
+      
+      // Special logging for session events
+      if (msg.type === "session.created" || msg.type === "session.updated") {
+        console.log("[Session Config]", JSON.stringify(msg.session, null, 2));
+      }
+    }
+
     if (!isValidToolCallMessage(msg)) {
       console.warn("Invalid message format:", msg);
       return;
@@ -125,6 +136,12 @@ export function useRealtimeSession(
       case "error":
         console.error("Error", msg.error);
         handlers.onError?.(msg.error);
+        break;
+      case "conversation.item.input_audio_transcription.failed":
+        console.error("[Transcription Failed] Error:", msg.error);
+        if (msg.error?.message?.includes("429")) {
+          console.warn("[Transcription Failed] ⚠️ Rate limit reached. Please wait a moment and try again.");
+        }
         break;
       case "response.text.delta":
         handlers.onTextDelta?.(msg.delta ?? "");
@@ -173,6 +190,37 @@ export function useRealtimeSession(
         break;
       case "input_audio_buffer.speech_stopped":
         handlers.onSpeechStopped?.();
+        break;
+      case "conversation.item.done":
+        // Debug: Log the full item to see its structure
+        console.log("[conversation.item.done] Role:", msg.item?.role, "Type:", msg.item?.type);
+        console.log("[conversation.item.done] Full item:", msg.item);
+        
+        // Check if this is a user message with audio input
+        if (msg.item?.type === "message" && msg.item?.role === "user") {
+          console.log("[conversation.item.done] ✅ User message detected");
+          const content = msg.item?.content;
+          if (Array.isArray(content)) {
+            console.log("[conversation.item.done] Content array length:", content.length);
+            for (let i = 0; i < content.length; i++) {
+              const part = content[i];
+              console.log(`[conversation.item.done] Content[${i}]:`, part);
+              if (part.type === "input_audio" && part.transcript) {
+                console.log("[conversation.item.done] 🎤 Found transcript:", part.transcript);
+                handlers.onUserTranscription?.(part.transcript);
+                break;
+              }
+            }
+          }
+        } else {
+          console.log("[conversation.item.done] ⏭️ Skipping (not user message)");
+        }
+        break;
+      case "conversation.item.input_audio_transcription.completed":
+        // Fallback: User's speech has been transcribed
+        if (msg.transcript) {
+          handlers.onUserTranscription?.(msg.transcript);
+        }
         break;
     }
   };
@@ -274,20 +322,24 @@ export function useRealtimeSession(
         const tools = options.buildTools({
           startResponse: startResponse.value,
         });
-        sendDataChannelMessage({
+        const sessionUpdate = {
           type: "session.update",
           session: {
             type: "realtime",
             model: modelId,
             instructions,
             audio: {
-              output: {
-                voice: "shimmer",
+              input: {
+                transcription: {
+                  model: "whisper-1",
+                },
               },
             },
             tools,
           },
-        });
+        };
+        console.log("[Sending session.update]", JSON.stringify(sessionUpdate, null, 2));
+        sendDataChannelMessage(sessionUpdate);
       });
       dc.addEventListener("message", handleMessage);
       dc.addEventListener("close", () => {
@@ -400,7 +452,7 @@ export function useRealtimeSession(
   const isDataChannelOpen = () => webrtc.dc?.readyState === "open";
 
   // Get local audio stream for voice transcription
-  const getLocalStream = () => webRtcState.localStream;
+  const getLocalStream = () => webrtc.localStream;
 
   return {
     chatActive,
