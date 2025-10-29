@@ -11,9 +11,10 @@ function appendToCSV(
   speaker: "user" | "ai",
   sessionId: string,
   text: string,
+  timestamp?: string,
 ): void {
-  const timestamp = new Date().toISOString();
-  const row = `${timestamp},${speaker},${sessionId},"${text.replace(/"/g, '""')}"\n`;
+  const ts = timestamp || new Date().toISOString();
+  const row = `${ts},${speaker},${sessionId},"${text.replace(/"/g, '""')}"\n`;
 
   // ファイルが存在しない場合はヘッダーを追加
   if (!fs.existsSync(CSV_FILE_PATH)) {
@@ -28,7 +29,7 @@ function appendToCSV(
 // WebRTCの会話ログをCSVに保存
 router.post("/", async (req: Request, res: Response): Promise<void> => {
   try {
-    const { speaker, session_id, text } = req.body;
+    const { speaker, session_id, text, timestamp } = req.body;
 
     if (!speaker || !session_id || !text) {
       res.status(400).json({ error: "Missing required fields: speaker, session_id, text" });
@@ -40,7 +41,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    appendToCSV(speaker, session_id, text);
+    appendToCSV(speaker, session_id, text, timestamp);
 
     res.json({ success: true });
   } catch (error: unknown) {

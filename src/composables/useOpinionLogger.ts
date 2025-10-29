@@ -7,7 +7,8 @@ export function useOpinionLogger() {
   async function logOpinion(
     sessionId: string,
     speaker: "user" | "ai",
-    text: string
+    text: string,
+    timestamp?: Date
   ): Promise<boolean> {
     loading.value = true;
     error.value = null;
@@ -22,6 +23,7 @@ export function useOpinionLogger() {
           speaker,
           session_id: sessionId,
           text: text.trim(),
+          timestamp: timestamp ? timestamp.toISOString() : new Date().toISOString(),
         }),
       });
 

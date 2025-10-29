@@ -74,7 +74,7 @@
           >
             <div ref="conversationScrollContainer" class="flex-1 overflow-y-auto p-6 space-y-4">
               <div
-                v-for="(msg, idx) in messages"
+                v-for="(msg, idx) in orderedMessages"
                 :key="idx"
                 :class="[
                   'flex',
@@ -165,9 +165,16 @@ interface Message {
   speaker: "user" | "ai";
   text: string;
   timestamp: Date;
+  index: number; // 追加順序を保持
 }
 
 const messages = ref<Message[]>([]);
+let messageIndex = 0; // グローバルな連番カウンター
+
+// index昇順で並べ替えた表示用（イベント到着順ではなく、追加順で表示）
+const orderedMessages = computed(() => {
+  return [...messages.value].sort((a, b) => a.index - b.index);
+});
 const currentText = ref("");
 const userInput = ref("");
 const conversationScrollContainer = ref<HTMLElement | null>(null);
@@ -175,9 +182,9 @@ const conversationScrollContainer = ref<HTMLElement | null>(null);
 // Opinion logger for CSV recording
 const { logOpinion } = useOpinionLogger();
 
-// Auto-scroll to bottom when new messages arrive
+// Auto-scroll to bottom when new messages arrive (sorted view)
 watch(
-  () => messages.value.length,
+  () => orderedMessages.value.length,
   () => {
     if (conversationScrollContainer.value) {
       setTimeout(() => {
@@ -378,16 +385,20 @@ registerEventHandlers({
   onTextCompleted: async () => {
     const aiText = currentText.value.trim();
     if (aiText) {
+      // Capture timestamp once to ensure consistency
+      const timestamp = new Date();
+      
       // Add to messages display first (to preserve order)
       messages.value.push({
         speaker: "ai",
         text: aiText,
-        timestamp: new Date(),
+        timestamp: timestamp,
+        index: messageIndex++,
       });
       
       // Log AI response to CSV (async, don't block UI)
       console.log("[OpinionLogger] AI response:", aiText);
-      logOpinion(sessionId.value, "ai", aiText).catch((err) => {
+      logOpinion(sessionId.value, "ai", aiText, timestamp).catch((err) => {
         console.error("[OpinionLogger] Failed to log AI response:", err);
       });
     }
@@ -397,15 +408,19 @@ registerEventHandlers({
     // User's voice input has been transcribed by Realtime API
     console.log("[OpinionLogger] User transcription:", text);
     
+    // Capture timestamp once to ensure consistency
+    const timestamp = new Date();
+    
     // Add to messages display first (to preserve order)
     messages.value.push({
       speaker: "user",
       text: text,
-      timestamp: new Date(),
+      timestamp: timestamp,
+      index: messageIndex++,
     });
     
     // Log user input to CSV (async, don't block UI)
-    logOpinion(sessionId.value, "user", text).catch((err) => {
+    logOpinion(sessionId.value, "user", text, timestamp).catch((err) => {
       console.error("[OpinionLogger] Failed to log user input:", err);
     });
   },
@@ -507,6 +522,7 @@ async function sendTextMessage(providedText?: string): Promise<void> {
     speaker: "user",
     text: text,
     timestamp: new Date(),
+    index: messageIndex++,
   });
   if (!providedText) {
     userInput.value = "";
