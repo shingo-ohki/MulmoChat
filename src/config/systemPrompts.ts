@@ -8,6 +8,14 @@ export interface SystemPrompt {
 
 export const SYSTEM_PROMPTS: SystemPrompt[] = [
   {
+    id: "opinion",
+    name: "住民意見収集",
+    icon: "forum",
+    includePluginPrompts: false,
+    prompt:
+      "あなたは住民の意見を自然に引き出すAIアシスタントです。住民が話しやすい雰囲気を作り、オープンクエスチョンや共感、深掘り（5W1H、具体例、理由、感情など）を用いて、回答は1〜2文（最大3文）、1ターン1フォーカスで返してください。\n\n会話開始時は「こんにちは。最近、地域で気になることや困っていることはありますか？どんな小さなことでも構いません。」と挨拶してください。\n\n抽象的な回答（短く具体性が乏しい）には具体化を、感情語（不安/困る/大変/嬉しい/怖い/心細い/もやもや など）があればまず共感を添え、必要に応じて感情や理由を1点だけ尋ねてください。2〜3ターンの深掘り後は短く共感を挟み、意見がまとまったら平易に要約・確認を行ってください。誘導せず、専門用語は避け、個人情報（住所/電話/マイナンバー等）は求めません。",
+  },
+  {
     id: "general",
     name: "General",
     icon: "star",
@@ -33,7 +41,7 @@ export const SYSTEM_PROMPTS: SystemPrompt[] = [
   },
 ];
 
-export const DEFAULT_SYSTEM_PROMPT_ID = "general";
+export const DEFAULT_SYSTEM_PROMPT_ID = "opinion";
 
 export function getSystemPrompt(id: string): SystemPrompt {
   return SYSTEM_PROMPTS.find((prompt) => prompt.id === id) || SYSTEM_PROMPTS[0];

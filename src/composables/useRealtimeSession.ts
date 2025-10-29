@@ -368,6 +368,14 @@ export function useRealtimeSession(
         };
         console.log("[Sending session.update]", JSON.stringify(sessionUpdate, null, 2));
         sendDataChannelMessage(sessionUpdate);
+        
+        // AIから会話を開始するために、空の応答生成をトリガー
+        setTimeout(() => {
+          console.log("[Triggering initial AI response]");
+          sendDataChannelMessage({
+            type: "response.create",
+          });
+        }, 500);
       });
       dc.addEventListener("message", handleMessage);
       dc.addEventListener("close", () => {
