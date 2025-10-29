@@ -4,19 +4,23 @@ export function useOpinionLogger() {
   const loading = ref(false);
   const error = ref<string | null>(null);
 
-  async function logOpinion(sessionId: string, text: string): Promise<boolean> {
+  async function logOpinion(
+    sessionId: string,
+    speaker: "user" | "ai",
+    text: string
+  ): Promise<boolean> {
     loading.value = true;
     error.value = null;
 
     try {
-      const response = await fetch("/api/log_opinion", {
+      const response = await fetch("/api/opinion/log", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          speaker,
           session_id: sessionId,
-          timestamp: new Date().toISOString(),
           text: text.trim(),
         }),
       });

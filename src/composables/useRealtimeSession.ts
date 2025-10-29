@@ -212,8 +212,36 @@ export function useRealtimeSession(
               }
             }
           }
+        }
+        // Check if this is an assistant message (AI response)
+        else if (msg.item?.type === "message" && msg.item?.role === "assistant") {
+          console.log("[conversation.item.done] ✅ Assistant message detected");
+          const content = msg.item?.content;
+          if (Array.isArray(content)) {
+            console.log("[conversation.item.done] Content array length:", content.length);
+            // Extract text or audio transcript from assistant response
+            for (let i = 0; i < content.length; i++) {
+              const part = content[i];
+              console.log(`[conversation.item.done] Content[${i}]:`, part);
+              
+              // Text response
+              if (part.type === "text" && typeof part.text === "string") {
+                console.log("[conversation.item.done] 💬 Found text:", part.text);
+                handlers.onTextDelta?.(part.text);
+                handlers.onTextCompleted?.();
+                break;
+              }
+              // Audio response with transcript (output_audio or audio)
+              else if ((part.type === "output_audio" || part.type === "audio") && typeof part.transcript === "string") {
+                console.log("[conversation.item.done] 🔊 Found audio transcript:", part.transcript);
+                handlers.onTextDelta?.(part.transcript);
+                handlers.onTextCompleted?.();
+                break;
+              }
+            }
+          }
         } else {
-          console.log("[conversation.item.done] ⏭️ Skipping (not user message)");
+          console.log("[conversation.item.done] ⏭️ Skipping (not user/assistant message)");
         }
         break;
       case "conversation.item.input_audio_transcription.completed":

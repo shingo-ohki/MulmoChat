@@ -333,10 +333,14 @@ registerEventHandlers({
     currentText.value += delta;
   },
   onTextCompleted: async () => {
-    const userText = currentText.value.trim();
-    if (userText) {
+    const aiText = currentText.value.trim();
+    if (aiText) {
+      // Log AI response to CSV
+      console.log("[OpinionLogger] AI response:", aiText);
+      await logOpinion(sessionId.value, "ai", aiText);
+      
       // Add to messages display
-      messages.value.push(userText);
+      messages.value.push(aiText);
     }
     currentText.value = "";
   },
@@ -344,8 +348,8 @@ registerEventHandlers({
     // User's voice input has been transcribed by Realtime API
     console.log("[OpinionLogger] User transcription:", text);
     
-    // Log to CSV
-    await logOpinion(sessionId.value, text);
+    // Log user input to CSV
+    await logOpinion(sessionId.value, "user", text);
     
     // Add to messages display
     messages.value.push(text);
