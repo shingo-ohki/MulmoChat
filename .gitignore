@@ -7,6 +7,7 @@ output
 
 # Opinion logs (CSV data)
 opinions.csv
+conversation_logs.csv
 
 # Vue TypeScript compilation artifacts
 src/**/*.vue.js

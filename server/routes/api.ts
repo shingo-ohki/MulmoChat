@@ -11,6 +11,7 @@ import htmlRouter from "./html";
 import textRouter from "./textLLM";
 import comfyRouter from "./comfyui";
 import voiceRouter from "./voice";
+import opinionRouter from "./opinion";
 dotenv.config();
 
 const router: Router = express.Router();
@@ -32,6 +33,9 @@ router.use(comfyRouter);
 
 // Mount voice transcription routes
 router.use(voiceRouter);
+
+// Mount opinion collection routes
+router.use("/opinion", opinionRouter);
 
 // Session start endpoint
 router.get("/start", async (req: Request, res: Response): Promise<void> => {
