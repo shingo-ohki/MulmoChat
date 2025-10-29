@@ -67,8 +67,45 @@
       <!-- Main content -->
       <div class="flex-1 flex flex-col">
         <div class="flex-1 border rounded bg-gray-50 overflow-hidden relative">
+          <!-- Conversation view for opinion collection mode -->
+          <div
+            v-if="userPreferences.systemPromptId === 'opinion' && messages.length > 0"
+            class="w-full h-full flex flex-col bg-gradient-to-b from-blue-50 to-white"
+          >
+            <div ref="conversationScrollContainer" class="flex-1 overflow-y-auto p-6 space-y-4">
+              <div
+                v-for="(msg, idx) in messages"
+                :key="idx"
+                :class="[
+                  'flex',
+                  msg.speaker === 'user' ? 'justify-end' : 'justify-start'
+                ]"
+              >
+                <div
+                  :class="[
+                    'max-w-[70%] rounded-2xl px-4 py-3 shadow-sm',
+                    msg.speaker === 'user'
+                      ? 'bg-blue-500 text-white rounded-br-sm'
+                      : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm'
+                  ]"
+                >
+                  <div class="text-sm font-medium mb-1 opacity-70">
+                    {{ msg.speaker === 'user' ? 'あなた' : 'AI' }}
+                  </div>
+                  <div class="text-base leading-relaxed whitespace-pre-wrap">
+                    {{ msg.text }}
+                  </div>
+                  <div class="text-xs mt-1 opacity-50">
+                    {{ msg.timestamp.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Original tool result view -->
           <component
-            v-if="
+            v-else-if="
               selectedResult &&
               getToolPlugin(selectedResult.toolName)?.viewComponent
             "
@@ -80,28 +117,13 @@
             :set-mute="setMute"
             @update-result="handleUpdateResult"
           />
+          
+          <!-- Default canvas placeholder -->
           <div
-            v-if="!selectedResult"
+            v-else
             class="w-full h-full flex items-center justify-center"
           >
             <div class="text-gray-400 text-lg">Canvas</div>
-          </div>
-          
-          <!-- Voice transcription overlay -->
-          <div
-            v-if="userPreferences.enableVoiceTranscription && messages.length > 0"
-            class="absolute bottom-4 left-4 right-4 bg-blue-50 border-2 border-blue-300 rounded-lg p-4 shadow-lg max-h-48 overflow-y-auto"
-          >
-            <div class="text-sm font-semibold text-blue-700 mb-2">音声入力:</div>
-            <div class="space-y-2">
-              <div
-                v-for="(msg, idx) in messages"
-                :key="idx"
-                class="text-base text-gray-800 bg-white rounded px-3 py-2 shadow-sm"
-              >
-                {{ msg }}
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -139,12 +161,33 @@ async function sleep(milliseconds: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-const messages = ref<string[]>([]);
+interface Message {
+  speaker: "user" | "ai";
+  text: string;
+  timestamp: Date;
+}
+
+const messages = ref<Message[]>([]);
 const currentText = ref("");
 const userInput = ref("");
+const conversationScrollContainer = ref<HTMLElement | null>(null);
 
 // Opinion logger for CSV recording
 const { logOpinion } = useOpinionLogger();
+
+// Auto-scroll to bottom when new messages arrive
+watch(
+  () => messages.value.length,
+  () => {
+    if (conversationScrollContainer.value) {
+      setTimeout(() => {
+        if (conversationScrollContainer.value) {
+          conversationScrollContainer.value.scrollTop = conversationScrollContainer.value.scrollHeight;
+        }
+      }, 100);
+    }
+  }
+);
 
 interface TextModelOption {
   id: string;
@@ -335,12 +378,18 @@ registerEventHandlers({
   onTextCompleted: async () => {
     const aiText = currentText.value.trim();
     if (aiText) {
-      // Log AI response to CSV
-      console.log("[OpinionLogger] AI response:", aiText);
-      await logOpinion(sessionId.value, "ai", aiText);
+      // Add to messages display first (to preserve order)
+      messages.value.push({
+        speaker: "ai",
+        text: aiText,
+        timestamp: new Date(),
+      });
       
-      // Add to messages display
-      messages.value.push(aiText);
+      // Log AI response to CSV (async, don't block UI)
+      console.log("[OpinionLogger] AI response:", aiText);
+      logOpinion(sessionId.value, "ai", aiText).catch((err) => {
+        console.error("[OpinionLogger] Failed to log AI response:", err);
+      });
     }
     currentText.value = "";
   },
@@ -348,11 +397,17 @@ registerEventHandlers({
     // User's voice input has been transcribed by Realtime API
     console.log("[OpinionLogger] User transcription:", text);
     
-    // Log user input to CSV
-    await logOpinion(sessionId.value, "user", text);
+    // Add to messages display first (to preserve order)
+    messages.value.push({
+      speaker: "user",
+      text: text,
+      timestamp: new Date(),
+    });
     
-    // Add to messages display
-    messages.value.push(text);
+    // Log user input to CSV (async, don't block UI)
+    logOpinion(sessionId.value, "user", text).catch((err) => {
+      console.error("[OpinionLogger] Failed to log user input:", err);
+    });
   },
   onSpeechStarted: () => {
     // For listener mode, log the speech event
@@ -448,7 +503,11 @@ async function sendTextMessage(providedText?: string): Promise<void> {
     return;
   }
 
-  messages.value.push(`You: ${text}`);
+  messages.value.push({
+    speaker: "user",
+    text: text,
+    timestamp: new Date(),
+  });
   if (!providedText) {
     userInput.value = "";
   }
