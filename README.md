@@ -1,3 +1,9 @@
+これは、AIとの音声対話から意見を抽出するツールです。
+[使用イメージ(screencast)](https://drive.google.com/file/d/1h0ufJ-_IQlqzi-BN6N8962f7ABFDCVF3/view)
+
+以下はオリジナルのMulmoChatのREADME
+
+---
 # MulmoChat
 
 **MulmoChat is a research prototype exploring a new paradigm for multimodal AI chat experiences.**
